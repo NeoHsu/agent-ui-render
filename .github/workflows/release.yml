@@ -122,9 +122,7 @@ jobs:
       DIST_TAG: ${{ needs.plan.outputs.tag }}
       DIST_TARGETS: ${{ join(matrix.targets, ',') }}
     permissions:
-      "attestations": "write"
       "contents": "read"
-      "id-token": "write"
     steps:
       - name: enable windows longpaths
         run: |
@@ -151,10 +149,6 @@ jobs:
           fi
           dist build "${tag_args[@]}" --artifacts=local --target "$DIST_TARGETS" --print=linkage --output-format=json > dist-manifest.json
           echo "dist ran successfully"
-      - name: Attest
-        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
-        with:
-          subject-path: "target/distrib/*${{ join(matrix.targets, ', ') }}*"
       - id: cargo-dist
         name: Post-build
         # We force bash here just because github makes it really hard to get values up

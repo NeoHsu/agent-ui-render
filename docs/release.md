@@ -106,8 +106,8 @@ publishes native binaries and installer scripts for the configured targets.
                                                |
                                                v
                                       +----------------+
-                                      | attestations   |
-                                      | provenance     |
+                                      | checksums      |
+                                      | release info   |
                                       +----------------+
 ```
 
