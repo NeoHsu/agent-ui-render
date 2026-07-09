@@ -77,9 +77,10 @@ fn invalid_payload_json_output_is_one_document_on_stdout() -> Result<(), Box<dyn
     );
     let value: serde_json::Value = serde_json::from_slice(&output.stdout)?;
     assert_eq!(value["valid"], false);
-    assert!(value["errors"]
+    let errors = value["errors"]
         .as_array()
-        .is_some_and(|errors| !errors.is_empty()));
+        .ok_or("validation errors should be an array")?;
+    assert!(!errors.is_empty());
     Ok(())
 }
 
