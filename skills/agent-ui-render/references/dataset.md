@@ -152,13 +152,13 @@ Use one shared dataset for multiple views:
       [["Jan", 120000], ["Feb", 135000], ["Mar", 150000]]
     ]
   ],
-  "v": [["t", 0, 0, [1]], ["r", 0]]
+  "v": [["t", 0, 0, [1]], ["r", 0, [0, 1]]]
 }
 ```
 
 Compatibility rules:
 
-- `r` only needs a dataset index.
+- `r` only needs a dataset index; optionally add column indexes as `["r", data, columns]` for a projected table.
 - `t`, `b`, `p`, and `d` need an x/dimension column index.
 - Numeric chart measures must reference numeric-compatible columns.
 - `s` needs numeric x plus at least one distinct numeric y measure.

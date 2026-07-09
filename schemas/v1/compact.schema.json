@@ -140,6 +140,12 @@
       "type": "array",
       "items": { "type": "integer", "minimum": 0 }
     },
+    "columnIndexes": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "integer", "minimum": 0 }
+    },
     "view": {
       "oneOf": [
         {
@@ -171,6 +177,16 @@
             { "$ref": "#/$defs/datasetIndex" },
             { "$ref": "#/$defs/columnIndex" },
             { "$ref": "#/$defs/measureIndexes" }
+          ]
+        },
+        {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "prefixItems": [
+            { "const": "r" },
+            { "$ref": "#/$defs/datasetIndex" },
+            { "$ref": "#/$defs/columnIndexes" }
           ]
         }
       ]

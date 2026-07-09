@@ -134,6 +134,7 @@ Views describe what the user should see. They are not component specs.
 type ViewTuple =
   | ["o", data: number]
   | ["r", data: number]
+  | ["r", data: number, columns: number[]]
   | ["t", data: number, x: number, measures: number[]]
   | ["b", data: number, dimension: number, measures: number[]]
   | ["d", data: number, dimension: number]
@@ -153,6 +154,8 @@ Code mapping:
 | `d`  | distribution         | bar chart               |
 | `p`  | composition          | pie when safe, else bar |
 | `s`  | relationship         | scatter chart           |
+
+For `r`, omit `columns` to show every column, or pass column indexes to render a compact projected table such as `["r", 0, [0, 2]]`.
 
 For `s`, `x` and at least one measure must be numeric-compatible and distinct.
 
@@ -207,7 +210,7 @@ it into readable data:
       "x": "month",
       "measures": ["revenue"]
     },
-    { "intent": "precise_records", "data": "sales" }
+    { "intent": "precise_records", "data": "sales", "columns": ["month", "revenue"] }
   ]
 }
 ```

@@ -227,11 +227,19 @@ body.agent-ui-standalone[data-theme="executive-clean"] {
 	padding: 14px;
 }
 
-.agent-ui-render[data-emphasis="subtle"] {
+.agent-ui-render[data-theme="report-light"][data-emphasis="subtle"],
+.agent-ui-render[data-theme="executive-clean"][data-emphasis="subtle"] {
 	--agent-critical-bg: var(--agent-error-bg);
 	--agent-critical-border: var(--agent-error-border);
 	--agent-warning-bg: #fffaf0;
 	--agent-info-bg: #f7fbff;
+}
+
+.agent-ui-render[data-theme="technical-dark"][data-emphasis="subtle"] {
+	--agent-critical-bg: var(--agent-error-bg);
+	--agent-critical-border: var(--agent-error-border);
+	--agent-warning-bg: #211a0f;
+	--agent-info-bg: #101d2e;
 }
 
 .agent-ui-render .report-header {
@@ -433,6 +441,14 @@ body.agent-ui-standalone[data-theme="executive-clean"] {
 }
 
 .agent-ui-render .card.muted {
+	background: var(--agent-surface-muted);
+}
+
+.agent-ui-render .view-card[data-view-priority="high"] {
+	border-top: 3px solid var(--agent-primary);
+}
+
+.agent-ui-render .view-card[data-view-priority="low"] {
 	background: var(--agent-surface-muted);
 }
 

@@ -367,12 +367,14 @@ fn normalize_compact_view(
     let data = dataset.id.clone();
 
     if code == VIEW_CODE_RECORDS {
+        let columns = compact_column_keys(tuple.get(2), &dataset.columns);
         return Some(ViewIntent {
             intent: domain::VIEW_INTENT_PRECISE_RECORDS.to_owned(),
             data,
             x: None,
             measures: None,
             dimensions: None,
+            columns: (!columns.is_empty()).then_some(columns),
             priority: None,
             title: None,
         });
@@ -384,6 +386,7 @@ fn normalize_compact_view(
             x: None,
             measures: None,
             dimensions: None,
+            columns: None,
             priority: None,
             title: None,
         });
@@ -412,6 +415,7 @@ fn normalize_compact_view(
             x: Some(x),
             measures: (!measures.is_empty()).then_some(measures),
             dimensions: None,
+            columns: None,
             priority: None,
             title: None,
         });
@@ -443,9 +447,27 @@ fn normalize_compact_view(
         x: Some(x),
         measures: Some(chart_measures),
         dimensions: None,
+        columns: None,
         priority: None,
         title: None,
     })
+}
+
+fn compact_column_keys(value: Option<&Value>, columns: &[CompactColumnMeta]) -> Vec<String> {
+    value
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(|item| {
+            item.as_u64()
+                .and_then(|index| column_key_at(columns, index as usize))
+        })
+        .fold(Vec::new(), |mut keys, key| {
+            if !keys.contains(&key) {
+                keys.push(key);
+            }
+            keys
+        })
 }
 
 fn normalize_compact_alerts(value: Option<&Value>) -> Vec<Alert> {

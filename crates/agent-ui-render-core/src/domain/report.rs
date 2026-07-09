@@ -133,6 +133,8 @@ pub struct ViewIntent {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub dimensions: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub columns: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub priority: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,

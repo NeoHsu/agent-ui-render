@@ -1,10 +1,4 @@
-import type {
-	Column,
-	Dataset,
-	Metric,
-	Primitive,
-	ViewIntent,
-} from "./types";
+import type { Column, Dataset, Metric, Primitive, ViewIntent } from "./types";
 
 export type SemanticTone =
 	| "critical"
@@ -170,20 +164,14 @@ export function semanticTextClass(value: string): string {
 	return tone ? `semantic semantic-${tone}` : "";
 }
 
-export function cellValueClass(
-	value: Primitive,
-	column: Column,
-): string {
+export function cellValueClass(value: Primitive, column: Column): string {
 	const rendered = formatCell(value, column);
 	const badgeTone = statusBadgeToneForText(rendered, column.key);
 	if (badgeTone) return `status-badge status-${badgeTone}`;
 	return semanticTextClass(rendered);
 }
 
-export function tableCellClass(
-	value: Primitive,
-	column: Column,
-): string {
+export function tableCellClass(value: Primitive, column: Column): string {
 	const rendered = formatCell(value, column);
 	const tone =
 		statusBadgeToneForText(rendered, column.key) ??
@@ -201,24 +189,49 @@ export function columnLabel(dataset: Dataset, key?: string): string {
 	return column?.label || key || "Value";
 }
 
+export function viewColumnKeys(view: ViewIntent): string[] {
+	if (view.columns?.length) return uniqueStrings(view.columns);
+	return uniqueStrings([
+		view.x,
+		...(view.dimensions ?? []),
+		...(view.measures ?? []),
+	]);
+}
+
+export function projectDatasetForView(
+	dataset: Dataset,
+	view: ViewIntent,
+): Dataset {
+	const indexes = viewColumnKeys(view)
+		.map((key) => columnIndex(dataset, key))
+		.filter((index) => index >= 0);
+	if (!indexes.length) return dataset;
+
+	return {
+		columns: indexes.map((index) => dataset.columns[index]),
+		rows: dataset.rows.map((row) => indexes.map((index) => row[index] ?? null)),
+	};
+}
+
+function uniqueStrings(values: Array<string | undefined>): string[] {
+	return [
+		...new Set(values.filter((value): value is string => Boolean(value))),
+	];
+}
+
 export function numericValue(row: Primitive[], index: number): number | null {
 	if (index < 0 || index >= row.length) return null;
 	const value = row[index];
 	return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
-export function firstNumericColumn(
-	dataset: Dataset,
-): string | undefined {
+export function firstNumericColumn(dataset: Dataset): string | undefined {
 	return dataset.columns.find((column) =>
 		["number", "currency", "percent"].includes(column.type || ""),
 	)?.key;
 }
 
-export function measureKeys(
-	dataset: Dataset,
-	view: ViewIntent,
-): string[] {
+export function measureKeys(dataset: Dataset, view: ViewIntent): string[] {
 	const measures = view.measures?.length
 		? view.measures
 		: [firstNumericColumn(dataset)];

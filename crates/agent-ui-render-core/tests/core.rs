@@ -191,6 +191,12 @@ fn schema_enums_match_centralized_code_mappings() -> Result<(), Box<dyn Error>> 
         Some(compact::VIEW_CODE_DISTRIBUTION)
     );
     assert_eq!(
+        compact_schema
+            .pointer("/$defs/view/oneOf/3/prefixItems/0/const")
+            .and_then(Value::as_str),
+        Some(compact::VIEW_CODE_RECORDS)
+    );
+    assert_eq!(
         strings_at(&compact_schema, "/$defs/alert/prefixItems/0/enum"),
         compact::ALERT_LEVEL_CODES
     );
@@ -399,6 +405,41 @@ fn golden_normalize_and_plan_small_report() -> Result<(), Box<dyn Error>> {
             ]
         })
     );
+    Ok(())
+}
+
+#[test]
+fn compact_records_view_projects_table_columns() -> Result<(), Box<dyn Error>> {
+    let payload = json!({
+        "version": 1,
+        "d": [[
+            "actions",
+            [["action", "s"], ["owner", "s"], ["status", "s"]],
+            [["Add guardrail", "Platform", "planned"], ["Verify alert", "SRE", "done"]]
+        ]],
+        "v": [["r", 0, [0, 2]]]
+    });
+    assert_schema_valid(
+        &schema_validator(COMPACT_SCHEMA)?,
+        "projected records",
+        &payload,
+    );
+    let report = validate_report(&payload);
+    assert!(report.errors.is_empty(), "{:#?}", report.errors);
+
+    let normalized = normalize_report(&payload)?.input;
+    assert_eq!(
+        normalized.views[0].columns.as_deref(),
+        Some(&["action".to_owned(), "status".to_owned()][..])
+    );
+
+    let spec = plan_ui_spec(&normalized);
+    assert_eq!(spec["blocks"][0]["columns"], json!(["action", "status"]));
+
+    let html = render_static_html(&normalized);
+    assert!(html.contains("<th>Action</th>"));
+    assert!(html.contains("<th>Status</th>"));
+    assert!(!html.contains("<th>Owner</th>"));
     Ok(())
 }
 

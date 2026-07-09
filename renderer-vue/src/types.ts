@@ -61,6 +61,7 @@ export type ViewIntent = {
 	x?: string;
 	measures?: string[];
 	dimensions?: string[];
+	columns?: string[];
 	priority?: "high" | "medium" | "low";
 	title?: string;
 };

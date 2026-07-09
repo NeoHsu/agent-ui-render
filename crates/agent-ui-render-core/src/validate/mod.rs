@@ -935,12 +935,29 @@ fn validate_compact_view(
         return;
     };
 
-    if compact::is_simple_view_code(code) {
+    if code == compact::VIEW_CODE_OVERVIEW {
         if tuple.len() != 2 {
+            report.error(path, "overview view tuple must have exactly 2 entries");
+        }
+        return;
+    }
+    if code == compact::VIEW_CODE_RECORDS {
+        if !(2..=3).contains(&tuple.len()) {
             report.error(
-                path,
-                "overview and records view tuples must have exactly 2 entries",
+                path.clone(),
+                "records view tuple must be [\"r\", data] or [\"r\", data, columns]",
             );
+            return;
+        }
+        if let Some(columns) = tuple.get(2) {
+            if !dataset.materialized {
+                report.error(
+                    format!("{path}[2]"),
+                    "records view column projection requires materialized dataset columns",
+                );
+                return;
+            }
+            validate_compact_record_columns(columns, &format!("{path}[2]"), dataset, report);
         }
         return;
     }
@@ -1020,6 +1037,43 @@ fn validate_compact_view(
                 distinct_category_count(dataset, x_index)
             ),
         );
+    }
+}
+
+fn validate_compact_record_columns(
+    value: &Value,
+    path: &str,
+    dataset: &DatasetInfo,
+    report: &mut ValidationReport,
+) {
+    let Some(columns) = value.as_array() else {
+        report.error(path, "records view columns must be an array");
+        return;
+    };
+    if columns.is_empty() {
+        report.error(path, "records view columns must not be empty");
+    }
+
+    let mut seen = BTreeSet::new();
+    for (column_pos, column) in columns.iter().enumerate() {
+        let column_path = format!("{path}[{column_pos}]");
+        let Some(column_index) = column.as_u64().map(|item| item as usize) else {
+            report.error(column_path, "column index must be a non-negative integer");
+            continue;
+        };
+        if column_index >= dataset.columns.len() {
+            report.error(
+                column_path,
+                format!("column index {column_index} is out of range"),
+            );
+            continue;
+        }
+        if !seen.insert(column_index) {
+            report.error(
+                column_path,
+                format!("duplicate column index {column_index}"),
+            );
+        }
     }
 }
 
@@ -1511,6 +1565,7 @@ fn validate_normalized_view(
             "x",
             "measures",
             "dimensions",
+            "columns",
             "priority",
             "title",
         ],
@@ -1552,6 +1607,7 @@ fn validate_normalized_view(
         );
         return;
     };
+    validate_normalized_view_columns(object.get("columns"), &path, dataset, limits, report);
     if matches!(
         intent,
         domain::VIEW_INTENT_OVERVIEW | domain::VIEW_INTENT_PRECISE_RECORDS
@@ -1634,6 +1690,57 @@ fn validate_normalized_view(
                     "relationship measure column must be distinct from x column",
                 );
             }
+        }
+    }
+}
+
+fn validate_normalized_view_columns(
+    value: Option<&Value>,
+    path: &str,
+    dataset: &DatasetInfo,
+    limits: &Limits,
+    report: &mut ValidationReport,
+) {
+    let Some(value) = value else {
+        return;
+    };
+    let Some(columns) = value.as_array() else {
+        report.error(
+            format!("{path}.columns"),
+            "view columns must be an array when present",
+        );
+        return;
+    };
+    if columns.is_empty() {
+        report.error(format!("{path}.columns"), "view columns must not be empty");
+    }
+
+    let mut seen = BTreeSet::new();
+    for (column_index, column) in columns.iter().enumerate() {
+        let column_path = format!("{path}.columns[{column_index}]");
+        let Some(column_key) = column.as_str() else {
+            report.error(column_path, "column key must be a string");
+            continue;
+        };
+        validate_string_length(
+            column_key,
+            &column_path,
+            limits.max_string_chars,
+            "column key",
+            report,
+        );
+        if !dataset
+            .columns
+            .iter()
+            .any(|column| column.key == column_key)
+        {
+            report.error(
+                column_path.clone(),
+                format!("column '{column_key}' does not exist"),
+            );
+        }
+        if !seen.insert(column_key) {
+            report.error(column_path, format!("duplicate column '{column_key}'"));
         }
     }
 }

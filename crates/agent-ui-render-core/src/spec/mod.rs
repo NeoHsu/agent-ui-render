@@ -2,7 +2,7 @@ use serde_json::{Map, Value, json};
 
 use crate::{
     chart::{chart_kind_for_view, first_non_measure_column, first_numeric_columns},
-    domain::{Dataset, FORMAT_VERSION, Report, SPEC_SCHEMA},
+    domain::{Dataset, FORMAT_VERSION, Report, SPEC_SCHEMA, ViewIntent},
 };
 
 #[must_use]
@@ -111,6 +111,10 @@ fn add_view_blocks(blocks: &mut Vec<Value>, input: &Report) {
             );
             block.insert("type".to_owned(), json!("table"));
             block.insert("data".to_owned(), json!(view.data));
+            let columns = selected_table_column_keys(dataset, view);
+            if !columns.is_empty() {
+                block.insert("columns".to_owned(), json!(columns));
+            }
             if let Some(title) = &view.title {
                 block.insert("title".to_owned(), json!(title));
             }
@@ -185,6 +189,39 @@ fn add_assumption_blocks(blocks: &mut Vec<Value>, input: &Report) {
             "content": assumption,
         }));
     }
+}
+
+fn selected_table_column_keys(dataset: &Dataset, view: &ViewIntent) -> Vec<String> {
+    let requested = view
+        .columns
+        .as_ref()
+        .filter(|columns| !columns.is_empty())
+        .map_or_else(
+            || {
+                let mut fallback = Vec::new();
+                if let Some(x) = &view.x {
+                    fallback.push(x.as_str());
+                }
+                if let Some(dimensions) = &view.dimensions {
+                    fallback.extend(dimensions.iter().map(String::as_str));
+                }
+                if let Some(measures) = &view.measures {
+                    fallback.extend(measures.iter().map(String::as_str));
+                }
+                fallback
+            },
+            |columns| columns.iter().map(String::as_str).collect(),
+        );
+
+    let mut columns = Vec::new();
+    for key in requested {
+        if dataset.columns.iter().any(|column| column.key == key)
+            && !columns.iter().any(|column| column == key)
+        {
+            columns.push(key.to_owned());
+        }
+    }
+    columns
 }
 
 fn slug(value: &str, fallback: usize) -> String {

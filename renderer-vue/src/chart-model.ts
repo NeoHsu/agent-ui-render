@@ -79,9 +79,16 @@ export function lineChartModel(
 	});
 }
 
+export type ScatterPoint = {
+	key: string;
+	cx: string;
+	cy: string;
+	title: string;
+};
+
 export type ScatterChartModel = {
 	label: string;
-	points: Array<{ key: string; cx: string; cy: string; title: string }>;
+	points: ScatterPoint[];
 };
 
 export function scatterChartModel(
@@ -127,18 +134,20 @@ export function scatterChartModel(
 	};
 }
 
+export type PieSlice = {
+	key: string;
+	label: string;
+	value: number;
+	color: string;
+	dashArray: string;
+	dashOffset: string;
+	valueText: string;
+	percentText: string;
+};
+
 export type PieChartModel = {
 	totalLabel: string;
-	slices: Array<{
-		key: string;
-		label: string;
-		value: number;
-		color: string;
-		dashArray: string;
-		dashOffset: string;
-		valueText: string;
-		percentText: string;
-	}>;
+	slices: PieSlice[];
 };
 
 export function pieChartModel(
@@ -190,10 +199,7 @@ export function pieChartModel(
 
 export type BarItem = { label: string; value: string; width: string };
 
-export function barChartModel(
-	dataset: Dataset,
-	view: ViewIntent,
-): BarItem[] {
+export function barChartModel(dataset: Dataset, view: ViewIntent): BarItem[] {
 	const xIndex = columnIndex(dataset, view.x);
 	const measure = measureKeys(dataset, view)[0];
 	const yIndex = columnIndex(dataset, measure);

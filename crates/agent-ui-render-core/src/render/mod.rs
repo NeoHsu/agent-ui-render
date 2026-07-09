@@ -47,6 +47,10 @@ const VUE_HANDOFF_FILES: &[(&str, &str)] = &[
         include_str!("../../../../renderer-vue/src/components/AlertList.vue"),
     ),
     (
+        "components/AssumptionList.vue",
+        include_str!("../../../../renderer-vue/src/components/AssumptionList.vue"),
+    ),
+    (
         "components/ChartPreview.vue",
         include_str!("../../../../renderer-vue/src/components/ChartPreview.vue"),
     ),
@@ -65,6 +69,34 @@ const VUE_HANDOFF_FILES: &[(&str, &str)] = &[
     (
         "components/MetricGrid.vue",
         include_str!("../../../../renderer-vue/src/components/MetricGrid.vue"),
+    ),
+    (
+        "components/ReportFooter.vue",
+        include_str!("../../../../renderer-vue/src/components/ReportFooter.vue"),
+    ),
+    (
+        "components/ReportHeader.vue",
+        include_str!("../../../../renderer-vue/src/components/ReportHeader.vue"),
+    ),
+    (
+        "components/ReportViewBlock.vue",
+        include_str!("../../../../renderer-vue/src/components/ReportViewBlock.vue"),
+    ),
+    (
+        "components/charts/BarChartView.vue",
+        include_str!("../../../../renderer-vue/src/components/charts/BarChartView.vue"),
+    ),
+    (
+        "components/charts/LineChartView.vue",
+        include_str!("../../../../renderer-vue/src/components/charts/LineChartView.vue"),
+    ),
+    (
+        "components/charts/PieChartView.vue",
+        include_str!("../../../../renderer-vue/src/components/charts/PieChartView.vue"),
+    ),
+    (
+        "components/charts/ScatterChartView.vue",
+        include_str!("../../../../renderer-vue/src/components/charts/ScatterChartView.vue"),
     ),
 ];
 
@@ -242,7 +274,7 @@ fn render_views(input: &Report) -> String {
                 || "<p class=\"empty\">No dataset available for this view.</p>".to_owned(),
                 |dataset| {
                     if view.intent == "precise_records" {
-                        render_table(dataset)
+                        render_table_for_view(dataset, view)
                     } else {
                         render_chart_or_table(dataset, view)
                     }
@@ -434,10 +466,57 @@ fn render_bar_chart(dataset: &Dataset, view: &ViewIntent) -> Option<String> {
     Some(format!("<div class=\"bar-chart\">{rows}</div>"))
 }
 
-fn render_table(dataset: &Dataset) -> String {
-    let headers = dataset
+fn render_table_for_view(dataset: &Dataset, view: &ViewIntent) -> String {
+    let columns = selected_table_column_indexes(dataset, view);
+    render_table_with_columns(dataset, &columns, "Dataset table")
+}
+
+fn selected_table_column_indexes(dataset: &Dataset, view: &ViewIntent) -> Vec<usize> {
+    let keys = view
         .columns
+        .as_ref()
+        .filter(|columns| !columns.is_empty())
+        .map_or_else(
+            || {
+                let mut fallback = Vec::new();
+                if let Some(x) = &view.x {
+                    fallback.push(x.as_str());
+                }
+                if let Some(dimensions) = &view.dimensions {
+                    fallback.extend(dimensions.iter().map(String::as_str));
+                }
+                if let Some(measures) = &view.measures {
+                    fallback.extend(measures.iter().map(String::as_str));
+                }
+                fallback
+            },
+            |columns| columns.iter().map(String::as_str).collect(),
+        );
+
+    let mut indexes = Vec::new();
+    for key in keys {
+        if let Some(index) = dataset.columns.iter().position(|column| column.key == key)
+            && !indexes.contains(&index)
+        {
+            indexes.push(index);
+        }
+    }
+    if indexes.is_empty() {
+        (0..dataset.columns.len()).collect()
+    } else {
+        indexes
+    }
+}
+
+fn render_table(dataset: &Dataset) -> String {
+    let columns = (0..dataset.columns.len()).collect::<Vec<_>>();
+    render_table_with_columns(dataset, &columns, "Dataset table")
+}
+
+fn render_table_with_columns(dataset: &Dataset, columns: &[usize], caption: &str) -> String {
+    let headers = columns
         .iter()
+        .filter_map(|index| dataset.columns.get(*index))
         .map(|column| {
             format!(
                 "<th>{}</th>",
@@ -449,17 +528,16 @@ fn render_table(dataset: &Dataset) -> String {
     let body = if dataset.rows.is_empty() {
         format!(
             "<tr><td colspan=\"{}\" class=\"empty\">No rows</td></tr>",
-            dataset.columns.len().max(1)
+            columns.len().max(1)
         )
     } else {
         dataset
             .rows
             .iter()
             .map(|row| {
-                let cells = dataset
-                    .columns
+                let cells = columns
                     .iter()
-                    .enumerate()
+                    .filter_map(|index| dataset.columns.get(*index).map(|column| (*index, column)))
                     .map(|(index, column)| {
                         format!(
                             "<td><span>{}</span></td>",
@@ -477,7 +555,8 @@ fn render_table(dataset: &Dataset) -> String {
             .join("\n")
     };
     format!(
-        "<div class=\"table-wrap\"><table><caption>Dataset table</caption><thead><tr>{headers}</tr></thead><tbody>{body}</tbody></table></div>"
+        "<div class=\"table-wrap\"><table><caption>{}</caption><thead><tr>{headers}</tr></thead><tbody>{body}</tbody></table></div>",
+        escape_html(caption)
     )
 }
 
