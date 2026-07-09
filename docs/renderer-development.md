@@ -27,7 +27,9 @@ Rust embeds these files through `include_str!`, so they must exist before
 - Keep renderer payload data as normalized reports (`schema: "ui.input.normalized"`,
   `version: 1`); do not add arbitrary component names, event handlers, or styles
   to the payload contract.
-- Use `agent-ui.css` tokens for themes.
+- Use `agent-ui.css` tokens for themes; public config `themeTokens` may override
+  color tokens, so new renderer colors should be represented as `--agent-*`
+  custom properties instead of hard-coded values.
 - Keep chart decision semantics aligned with Rust `chart_kind_for_view`.
 - Run Rust and Vue checks before release.
 
@@ -39,7 +41,7 @@ Rust embeds these files through `include_str!`, so they must exist before
 Report.vue
 agent-ui-renderer/
   AgentUiRenderer.vue
-  components/*.vue
+  components/**/*.vue
   agent-ui.css
   chart-model.ts
   chart-selection.ts

@@ -67,7 +67,9 @@ agent-ui-render schema print config
 agent-ui-render --config agent-ui-render.config.json validate input.json
 ```
 
-Config files override built-in runtime limits. Example:
+Config files override built-in runtime limits and may provide trusted host theme
+color tokens. Limits and theme tokens are host/runtime policy and are never read
+from the untrusted input payload.
 
 ```json
 {
@@ -76,9 +78,25 @@ Config files override built-in runtime limits. Example:
     "maxRowsPerDataset": 2000,
     "maxCellsPerDataset": 100000,
     "warnOutputHtmlBytes": 5242880
+  },
+  "themeTokens": {
+    "page": "#0b1220",
+    "bg": "#111827",
+    "surface": "#1f2937",
+    "text": "#f9fafb",
+    "muted": "#cbd5e1",
+    "primary": "#8b5cf6",
+    "accent": "#f59e0b",
+    "series1": "#8b5cf6",
+    "series2": "#06b6d4"
   }
 }
 ```
+
+`themeTokens` are emitted after the bundled renderer CSS for `render html`,
+`render static-html`, and `render vue`. Values must be safe CSS color literals:
+hex colors, common CSS color functions like `rgb(...)`/`oklch(...)`,
+`transparent`, or `currentColor`.
 
 Available limit keys:
 
@@ -96,6 +114,58 @@ maxStringChars
 maxMarkdownSectionChars
 maxTotalMarkdownChars
 warnOutputHtmlBytes
+```
+
+Available theme token keys:
+
+```text
+page
+bg
+surface
+surfaceMuted
+surfaceStrong
+border
+borderSoft
+text
+muted
+subtle
+primary
+accent
+info
+success
+error
+codeBg
+codeFg
+codeBorder
+preBg
+preFg
+preBorder
+chartBg
+chartBorder
+chartAxis
+series1
+series2
+series3
+series4
+series5
+series6
+criticalBg
+criticalSoft
+criticalBorder
+criticalFg
+errorBg
+errorSoft
+errorBorder
+errorFg
+warningBg
+warningBorder
+warningFg
+successBg
+successBorder
+successFg
+infoBg
+infoBorder
+infoFg
 ```
 
 ## Exit codes

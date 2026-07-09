@@ -72,12 +72,13 @@ Global flags:
 --config <path>
 ```
 
-## Configurable limits
+## Configurable limits and theme colors
 
-Use an explicit config file to override runtime guardrails:
+Use an explicit config file to override runtime guardrails and trusted host color
+tokens:
 
 ```bash
-agent-ui-render --config agent-ui-render.config.json validate input.json
+agent-ui-render --config agent-ui-render.config.json render html input.json report.html
 ```
 
 ```json
@@ -87,11 +88,22 @@ agent-ui-render --config agent-ui-render.config.json validate input.json
     "maxRowsPerDataset": 2000,
     "maxCellsPerDataset": 100000,
     "warnOutputHtmlBytes": 5242880
+  },
+  "themeTokens": {
+    "page": "#0b1220",
+    "bg": "#111827",
+    "surface": "#1f2937",
+    "text": "#f9fafb",
+    "primary": "#8b5cf6",
+    "series1": "#8b5cf6",
+    "series2": "#06b6d4"
   }
 }
 ```
 
-Limits are host/runtime policy and are never read from the untrusted payload.
+Limits and theme tokens are host/runtime policy and are never read from the
+untrusted payload. Theme tokens map to `--agent-*` CSS custom properties and are
+validated as safe CSS color literals before render output is written.
 
 ## Architecture
 

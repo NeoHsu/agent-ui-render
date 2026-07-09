@@ -54,6 +54,55 @@ fn config_limits_are_enforced() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[test]
+fn theme_tokens_config_is_embedded_in_rendered_html() -> Result<(), Box<dyn std::error::Error>> {
+    let temp = tempfile::tempdir()?;
+    let config = temp.path().join("agent-ui-render.config.json");
+    fs::write(
+        &config,
+        r##"{"themeTokens":{"page":"#0b1220","text":"#f9fafb","primary":"#8b5cf6","series1":"#06b6d4"}}"##,
+    )?;
+    let output = temp.path().join("report.static.html");
+    let input = workspace_root()?.join("examples/revenue-overview.input.json");
+    let status = Command::new(env!("CARGO_BIN_EXE_agent-ui-render"))
+        .arg("--config")
+        .arg(config)
+        .args(["render", "static-html"])
+        .arg(input)
+        .arg(&output)
+        .status()?;
+    assert!(status.success());
+
+    let html = fs::read_to_string(output)?;
+    assert!(html.contains("--agent-primary: #8b5cf6;"));
+    assert!(html.contains("--agent-series-1: #06b6d4;"));
+    assert!(html.contains("background: var(--agent-page);"));
+    assert!(html.contains("color: var(--agent-text);"));
+    Ok(())
+}
+
+#[test]
+fn unsafe_theme_token_config_exits_nonzero() -> Result<(), Box<dyn std::error::Error>> {
+    let temp = tempfile::tempdir()?;
+    let config = temp.path().join("agent-ui-render.config.json");
+    fs::write(
+        &config,
+        r##"{"themeTokens":{"primary":"#fff;}</style><script>bad()</script>"}}"##,
+    )?;
+    let output = temp.path().join("report.static.html");
+    let input = workspace_root()?.join("examples/revenue-overview.input.json");
+    let output = Command::new(env!("CARGO_BIN_EXE_agent-ui-render"))
+        .arg("--config")
+        .arg(config)
+        .args(["render", "static-html"])
+        .arg(input)
+        .arg(output)
+        .output()?;
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("invalid theme token"));
+    Ok(())
+}
+
+#[test]
 fn max_input_bytes_is_enforced_before_parse() -> Result<(), Box<dyn std::error::Error>> {
     let temp = tempfile::tempdir()?;
     let config = temp.path().join("agent-ui-render.config.json");

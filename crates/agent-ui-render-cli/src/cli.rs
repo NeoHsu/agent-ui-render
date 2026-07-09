@@ -35,7 +35,7 @@ pub struct GlobalArgs {
     #[arg(long, global = true)]
     pub pretty: bool,
 
-    /// Explicit JSON config path for validation/render limits
+    /// Explicit JSON config path for validation/render limits and theme tokens
     #[arg(long, global = true)]
     pub config: Option<PathBuf>,
 }

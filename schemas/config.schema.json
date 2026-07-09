@@ -23,12 +23,74 @@
         "maxTotalMarkdownChars": { "$ref": "#/$defs/nonNegativeInteger" },
         "warnOutputHtmlBytes": { "$ref": "#/$defs/nonNegativeInteger" }
       }
-    }
+    },
+    "themeTokens": { "$ref": "#/$defs/themeTokens" }
   },
   "$defs": {
     "nonNegativeInteger": {
       "type": "integer",
       "minimum": 0
+    },
+    "cssColorToken": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 96,
+      "description": "Safe CSS color literal. Runtime validation accepts hex colors, common CSS color functions, transparent, and currentColor.",
+      "pattern": "^(#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{4}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})|((rgb|rgba|hsl|hsla|hwb|lab|lch|oklab|oklch)\\([0-9A-Za-z .,%/+\\-]*\\))|transparent|currentColor)$"
+    },
+    "themeTokens": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Trusted host color tokens applied after the bundled renderer CSS. Keys map to --agent-* CSS custom properties.",
+      "properties": {
+        "page": { "$ref": "#/$defs/cssColorToken" },
+        "bg": { "$ref": "#/$defs/cssColorToken" },
+        "surface": { "$ref": "#/$defs/cssColorToken" },
+        "surfaceMuted": { "$ref": "#/$defs/cssColorToken" },
+        "surfaceStrong": { "$ref": "#/$defs/cssColorToken" },
+        "border": { "$ref": "#/$defs/cssColorToken" },
+        "borderSoft": { "$ref": "#/$defs/cssColorToken" },
+        "text": { "$ref": "#/$defs/cssColorToken" },
+        "muted": { "$ref": "#/$defs/cssColorToken" },
+        "subtle": { "$ref": "#/$defs/cssColorToken" },
+        "primary": { "$ref": "#/$defs/cssColorToken" },
+        "accent": { "$ref": "#/$defs/cssColorToken" },
+        "info": { "$ref": "#/$defs/cssColorToken" },
+        "success": { "$ref": "#/$defs/cssColorToken" },
+        "error": { "$ref": "#/$defs/cssColorToken" },
+        "codeBg": { "$ref": "#/$defs/cssColorToken" },
+        "codeFg": { "$ref": "#/$defs/cssColorToken" },
+        "codeBorder": { "$ref": "#/$defs/cssColorToken" },
+        "preBg": { "$ref": "#/$defs/cssColorToken" },
+        "preFg": { "$ref": "#/$defs/cssColorToken" },
+        "preBorder": { "$ref": "#/$defs/cssColorToken" },
+        "chartBg": { "$ref": "#/$defs/cssColorToken" },
+        "chartBorder": { "$ref": "#/$defs/cssColorToken" },
+        "chartAxis": { "$ref": "#/$defs/cssColorToken" },
+        "series1": { "$ref": "#/$defs/cssColorToken" },
+        "series2": { "$ref": "#/$defs/cssColorToken" },
+        "series3": { "$ref": "#/$defs/cssColorToken" },
+        "series4": { "$ref": "#/$defs/cssColorToken" },
+        "series5": { "$ref": "#/$defs/cssColorToken" },
+        "series6": { "$ref": "#/$defs/cssColorToken" },
+        "criticalBg": { "$ref": "#/$defs/cssColorToken" },
+        "criticalSoft": { "$ref": "#/$defs/cssColorToken" },
+        "criticalBorder": { "$ref": "#/$defs/cssColorToken" },
+        "criticalFg": { "$ref": "#/$defs/cssColorToken" },
+        "errorBg": { "$ref": "#/$defs/cssColorToken" },
+        "errorSoft": { "$ref": "#/$defs/cssColorToken" },
+        "errorBorder": { "$ref": "#/$defs/cssColorToken" },
+        "errorFg": { "$ref": "#/$defs/cssColorToken" },
+        "warningBg": { "$ref": "#/$defs/cssColorToken" },
+        "warningBorder": { "$ref": "#/$defs/cssColorToken" },
+        "warningFg": { "$ref": "#/$defs/cssColorToken" },
+        "successBg": { "$ref": "#/$defs/cssColorToken" },
+        "successBorder": { "$ref": "#/$defs/cssColorToken" },
+        "successFg": { "$ref": "#/$defs/cssColorToken" },
+        "infoBg": { "$ref": "#/$defs/cssColorToken" },
+        "infoBorder": { "$ref": "#/$defs/cssColorToken" },
+        "infoFg": { "$ref": "#/$defs/cssColorToken" }
+      }
     }
   }
 }

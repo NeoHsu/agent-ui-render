@@ -1,9 +1,14 @@
-use std::{error::Error, io, path::PathBuf, process::Command};
+use std::{collections::BTreeSet, error::Error, io, path::PathBuf, process::Command};
 
 use agent_ui_render_core::{
-    Limits, ValidationOptions, chart::chart_kind_for_view, domain, markdown::markdown_to_html,
-    normalize_report, plan_ui_spec, render_static_html, render_vue_html_shell, validate_report,
-    validate_report_with_options, wire::compact,
+    Limits, RuntimeConfig, ThemeTokens, ValidationOptions,
+    chart::chart_kind_for_view,
+    domain, is_safe_css_color_value,
+    markdown::markdown_to_html,
+    normalize_report, plan_ui_spec,
+    render::{render_static_html_with_theme_tokens, render_theme_token_css},
+    render_static_html, render_vue_html_shell, validate_report, validate_report_with_options,
+    wire::compact,
 };
 use serde_json::{Value, json};
 
@@ -33,6 +38,7 @@ const EXAMPLES: &[(&str, &str)] = &[
 const COMPACT_SCHEMA: &str = include_str!("../../../schemas/v1/compact.schema.json");
 const NORMALIZED_SCHEMA: &str = include_str!("../../../schemas/v1/normalized.schema.json");
 const SPEC_SCHEMA: &str = include_str!("../../../schemas/v1/spec.schema.json");
+const CONFIG_SCHEMA: &str = include_str!("../../../schemas/config.schema.json");
 
 #[test]
 fn validates_and_normalizes_revenue_overview() -> Result<(), Box<dyn Error>> {
@@ -239,6 +245,77 @@ fn schema_enums_match_centralized_code_mappings() -> Result<(), Box<dyn Error>> 
         strings_at(&spec_schema, "/$defs/alertBlock/properties/level/enum"),
         domain::ALERT_LEVELS
     );
+
+    let config_schema: Value = serde_json::from_str(CONFIG_SCHEMA)?;
+    let config_validator = schema_validator(CONFIG_SCHEMA)?;
+    assert_schema_valid(
+        &config_validator,
+        "theme token config",
+        &json!({
+            "themeTokens": {
+                "primary": "#8b5cf6",
+                "series1": "oklch(62% 0.2 275)"
+            }
+        }),
+    );
+    let schema_theme_tokens = config_schema["$defs"]["themeTokens"]["properties"]
+        .as_object()
+        .ok_or_else(|| io::Error::other("config schema theme token properties should exist"))?
+        .keys()
+        .map(String::as_str)
+        .collect::<BTreeSet<_>>();
+    let runtime_theme_tokens = ThemeTokens::KEYS.iter().copied().collect::<BTreeSet<_>>();
+    assert_eq!(schema_theme_tokens, runtime_theme_tokens);
+    Ok(())
+}
+
+#[test]
+fn theme_tokens_render_as_safe_css_overrides() {
+    let tokens = ThemeTokens {
+        page: Some("#0b1220".to_owned()),
+        text: Some("rgb(249 250 251)".to_owned()),
+        primary: Some("#8b5cf6".to_owned()),
+        series_1: Some("oklch(62% 0.2 275)".to_owned()),
+        ..ThemeTokens::default()
+    };
+    assert!(tokens.validate().is_ok());
+
+    let css = render_theme_token_css(&tokens);
+    assert!(css.contains("--agent-primary: #8b5cf6;"));
+    assert!(css.contains("--agent-series-1: oklch(62% 0.2 275);"));
+    assert!(css.contains("body.agent-ui-standalone.agent-ui-standalone[data-theme]"));
+    assert!(css.contains("background: var(--agent-page);"));
+    assert!(css.contains("color: var(--agent-text);"));
+
+    let report = domain::Report {
+        title: Some("Brand Report".to_owned()),
+        ..domain::Report::default()
+    };
+    let html = render_static_html_with_theme_tokens(&report, &tokens);
+    assert!(html.contains("Brand Report"));
+    assert!(html.contains("--agent-primary: #8b5cf6;"));
+}
+
+#[test]
+fn theme_token_values_fail_closed() -> Result<(), Box<dyn Error>> {
+    assert!(is_safe_css_color_value("#fff"));
+    assert!(is_safe_css_color_value("rgba(15, 23, 42, 0.8)"));
+    assert!(!is_safe_css_color_value("#12"));
+    assert!(!is_safe_css_color_value(
+        "#fff;}</style><script>bad()</script>"
+    ));
+
+    let config: RuntimeConfig = serde_json::from_value(json!({
+        "themeTokens": {
+            "primary": "#fff; background: red"
+        }
+    }))?;
+    let error = config.validate().expect_err("unsafe token should fail");
+    assert_eq!(error.violations()[0].key, "primary");
+
+    let css = render_theme_token_css(&config.theme_tokens);
+    assert!(!css.contains("--agent-primary"));
+    assert!(!css.contains("background: red"));
     Ok(())
 }
 

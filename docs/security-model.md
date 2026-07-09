@@ -6,7 +6,8 @@
 
 - Untrusted: compact JSON payloads produced by models or tools.
 - Trusted: CLI binary, bundled renderer assets, schemas, and optional host config.
-- Host config controls runtime limits; payloads cannot raise their own limits.
+- Host config controls runtime limits and optional renderer theme color tokens;
+  payloads cannot raise their own limits or provide CSS.
 
 ## What is allowed
 
@@ -44,6 +45,10 @@ Default limits are defined in `Limits` and can be lowered by trusted config:
 Validation fails closed for oversized or structurally invalid payloads. Render
 commands warn when generated HTML exceeds `warnOutputHtmlBytes`; with
 `--warnings-as-errors`, this blocks the command.
+
+Trusted config may also set `themeTokens` for renderer colors. Theme token values
+are validated as safe CSS color literals before render output is written; raw CSS
+remains outside the payload contract.
 
 ## Release gates
 

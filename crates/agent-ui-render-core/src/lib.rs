@@ -14,8 +14,13 @@ pub use domain::{
     Alert, Column, Dataset, MarkdownSection, Metric, MetricDelta, Report, ViewIntent,
 };
 pub use normalize::{NormalizationResult, normalize_report};
-pub use options::{LimitOverrides, Limits, RuntimeConfig, ValidationOptions};
-pub use render::{render_static_html, render_vue_html_shell};
+pub use options::{
+    LimitOverrides, Limits, RuntimeConfig, ThemeTokens, ValidationOptions, is_safe_css_color_value,
+};
+pub use render::{
+    render_static_html, render_static_html_with_theme_tokens, render_theme_token_css,
+    render_vue_html_shell, render_vue_html_shell_with_theme_tokens,
+};
 pub use spec::plan_ui_spec;
 pub use validate::{
     validate_normalized_report, validate_normalized_report_with_options, validate_report,

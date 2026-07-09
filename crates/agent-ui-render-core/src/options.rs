@@ -1,3 +1,5 @@
+use std::{error::Error, fmt};
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -50,6 +52,8 @@ pub struct ValidationOptions {
 pub struct RuntimeConfig {
     #[serde(default)]
     pub limits: LimitOverrides,
+    #[serde(default)]
+    pub theme_tokens: ThemeTokens,
 }
 
 impl RuntimeConfig {
@@ -57,6 +61,15 @@ impl RuntimeConfig {
     pub fn apply_to_options(self, mut options: ValidationOptions) -> ValidationOptions {
         self.limits.apply_to(&mut options.limits);
         options
+    }
+
+    /// Validate trusted host configuration before any renderer CSS is emitted.
+    ///
+    /// Theme token values are intentionally limited to safe CSS color literals so
+    /// a config file cannot accidentally smuggle extra CSS declarations into the
+    /// generated HTML.
+    pub fn validate(&self) -> Result<(), ThemeTokenValidationError> {
+        self.theme_tokens.validate()
     }
 }
 
@@ -112,6 +125,195 @@ impl LimitOverrides {
             &mut limits.warn_output_html_bytes,
         );
     }
+}
+
+macro_rules! theme_tokens {
+    ($( $field:ident => ($key:literal, $css_var:literal) ),+ $(,)?) => {
+        #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+        #[serde(deny_unknown_fields)]
+        pub struct ThemeTokens {
+            $(
+                #[serde(default, rename = $key, skip_serializing_if = "Option::is_none")]
+                pub $field: Option<String>,
+            )+
+        }
+
+        impl ThemeTokens {
+            pub const KEYS: &'static [&'static str] = &[$($key),+];
+
+            #[must_use]
+            pub fn entries(&self) -> Vec<ThemeTokenEntry<'_>> {
+                let mut entries = Vec::new();
+                $(
+                    if let Some(value) = &self.$field {
+                        entries.push(ThemeTokenEntry {
+                            key: $key,
+                            css_var: $css_var,
+                            value,
+                        });
+                    }
+                )+
+                entries
+            }
+
+            #[must_use]
+            pub fn is_empty(&self) -> bool {
+                self.entries().is_empty()
+            }
+
+            pub fn validate(&self) -> Result<(), ThemeTokenValidationError> {
+                let violations = self
+                    .entries()
+                    .into_iter()
+                    .filter(|entry| !is_safe_css_color_value(entry.value))
+                    .map(|entry| ThemeTokenViolation {
+                        key: entry.key,
+                        value: entry.value.to_owned(),
+                    })
+                    .collect::<Vec<_>>();
+
+                if violations.is_empty() {
+                    Ok(())
+                } else {
+                    Err(ThemeTokenValidationError { violations })
+                }
+            }
+        }
+    };
+}
+
+theme_tokens! {
+    page => ("page", "--agent-page"),
+    bg => ("bg", "--agent-bg"),
+    surface => ("surface", "--agent-surface"),
+    surface_muted => ("surfaceMuted", "--agent-surface-muted"),
+    surface_strong => ("surfaceStrong", "--agent-surface-strong"),
+    border => ("border", "--agent-border"),
+    border_soft => ("borderSoft", "--agent-border-soft"),
+    text => ("text", "--agent-text"),
+    muted => ("muted", "--agent-muted"),
+    subtle => ("subtle", "--agent-subtle"),
+    primary => ("primary", "--agent-primary"),
+    accent => ("accent", "--agent-accent"),
+    info => ("info", "--agent-info"),
+    success => ("success", "--agent-success"),
+    error => ("error", "--agent-error"),
+    code_bg => ("codeBg", "--agent-code-bg"),
+    code_fg => ("codeFg", "--agent-code-fg"),
+    code_border => ("codeBorder", "--agent-code-border"),
+    pre_bg => ("preBg", "--agent-pre-bg"),
+    pre_fg => ("preFg", "--agent-pre-fg"),
+    pre_border => ("preBorder", "--agent-pre-border"),
+    chart_bg => ("chartBg", "--agent-chart-bg"),
+    chart_border => ("chartBorder", "--agent-chart-border"),
+    chart_axis => ("chartAxis", "--agent-chart-axis"),
+    series_1 => ("series1", "--agent-series-1"),
+    series_2 => ("series2", "--agent-series-2"),
+    series_3 => ("series3", "--agent-series-3"),
+    series_4 => ("series4", "--agent-series-4"),
+    series_5 => ("series5", "--agent-series-5"),
+    series_6 => ("series6", "--agent-series-6"),
+    critical_bg => ("criticalBg", "--agent-critical-bg"),
+    critical_soft => ("criticalSoft", "--agent-critical-soft"),
+    critical_border => ("criticalBorder", "--agent-critical-border"),
+    critical_fg => ("criticalFg", "--agent-critical-fg"),
+    error_bg => ("errorBg", "--agent-error-bg"),
+    error_soft => ("errorSoft", "--agent-error-soft"),
+    error_border => ("errorBorder", "--agent-error-border"),
+    error_fg => ("errorFg", "--agent-error-fg"),
+    warning_bg => ("warningBg", "--agent-warning-bg"),
+    warning_border => ("warningBorder", "--agent-warning-border"),
+    warning_fg => ("warningFg", "--agent-warning-fg"),
+    success_bg => ("successBg", "--agent-success-bg"),
+    success_border => ("successBorder", "--agent-success-border"),
+    success_fg => ("successFg", "--agent-success-fg"),
+    info_bg => ("infoBg", "--agent-info-bg"),
+    info_border => ("infoBorder", "--agent-info-border"),
+    info_fg => ("infoFg", "--agent-info-fg"),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ThemeTokenEntry<'a> {
+    pub key: &'static str,
+    pub css_var: &'static str,
+    pub value: &'a str,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ThemeTokenViolation {
+    pub key: &'static str,
+    pub value: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ThemeTokenValidationError {
+    violations: Vec<ThemeTokenViolation>,
+}
+
+impl ThemeTokenValidationError {
+    #[must_use]
+    pub fn violations(&self) -> &[ThemeTokenViolation] {
+        &self.violations
+    }
+}
+
+impl fmt::Display for ThemeTokenValidationError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let details = self
+            .violations
+            .iter()
+            .map(|violation| format!("{}={:?}", violation.key, violation.value))
+            .collect::<Vec<_>>()
+            .join(", ");
+        write!(formatter, "invalid theme token color value(s): {details}")
+    }
+}
+
+impl Error for ThemeTokenValidationError {}
+
+#[must_use]
+pub fn is_safe_css_color_value(value: &str) -> bool {
+    let value = value.trim();
+    if value.is_empty() || value.len() > 96 || value.chars().any(char::is_control) {
+        return false;
+    }
+
+    if value == "transparent" || value == "currentColor" {
+        return true;
+    }
+
+    is_hex_color(value) || is_color_function(value)
+}
+
+fn is_hex_color(value: &str) -> bool {
+    let Some(hex) = value.strip_prefix('#') else {
+        return false;
+    };
+    matches!(hex.len(), 3 | 4 | 6 | 8) && hex.chars().all(|character| character.is_ascii_hexdigit())
+}
+
+fn is_color_function(value: &str) -> bool {
+    let Some(open_paren) = value.find('(') else {
+        return false;
+    };
+    if !value.ends_with(')') || value[..open_paren].contains(char::is_whitespace) {
+        return false;
+    }
+
+    let name = &value[..open_paren];
+    if !matches!(
+        name,
+        "rgb" | "rgba" | "hsl" | "hsla" | "hwb" | "lab" | "lch" | "oklab" | "oklch"
+    ) {
+        return false;
+    }
+
+    let args = &value[open_paren + 1..value.len() - 1];
+    !args.is_empty()
+        && args.chars().all(|character| {
+            character.is_ascii_alphanumeric()
+                || matches!(character, ' ' | '\t' | '.' | ',' | '%' | '/' | '+' | '-')
+        })
 }
 
 fn apply(value: Option<usize>, target: &mut usize) {

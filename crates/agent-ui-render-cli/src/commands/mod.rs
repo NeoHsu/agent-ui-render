@@ -7,8 +7,11 @@ use std::{
 use agent_ui_render_core::{
     Finding, FindingLevel, Report, RuntimeConfig, ValidationOptions, ValidationReport,
     normalize_report, plan_ui_spec,
-    render::{render_vue_wrapper, vue_handoff_files},
-    render_static_html as render_static_html_document, render_vue_html_shell,
+    render::{
+        render_static_html_with_theme_tokens as render_static_html_document,
+        render_vue_html_shell_with_theme_tokens, render_vue_wrapper_with_theme_tokens,
+        vue_handoff_files,
+    },
     validate_normalized_report_with_options, validate_report_with_options,
 };
 use anyhow::Context;
@@ -64,10 +67,13 @@ pub fn plan(command: &IoCommand, global: &GlobalArgs) -> anyhow::Result<()> {
 }
 
 pub fn render_html(command: &RenderFileCommand, global: &GlobalArgs) -> anyhow::Result<()> {
-    let options = validation_options(global)?;
+    let config = runtime_config(global)?;
+    let options = config
+        .clone()
+        .apply_to_options(ValidationOptions::default());
     let payload = read_json(&command.input, options.limits.max_input_bytes)?;
     let normalized = validated_normalized_payload(&payload, global, &options)?;
-    let html = render_vue_html_shell(&normalized);
+    let html = render_vue_html_shell_with_theme_tokens(&normalized, &config.theme_tokens);
     warn_if_large_output(&command.output_path, &html, global, &options);
     write_text_file(&command.output_path, &html)?;
     if !global.quiet {
@@ -80,10 +86,13 @@ pub fn render_html(command: &RenderFileCommand, global: &GlobalArgs) -> anyhow::
 }
 
 pub fn render_static_html(command: &RenderFileCommand, global: &GlobalArgs) -> anyhow::Result<()> {
-    let options = validation_options(global)?;
+    let config = runtime_config(global)?;
+    let options = config
+        .clone()
+        .apply_to_options(ValidationOptions::default());
     let payload = read_json(&command.input, options.limits.max_input_bytes)?;
     let normalized = validated_normalized_payload(&payload, global, &options)?;
-    let html = render_static_html_document(&normalized);
+    let html = render_static_html_document(&normalized, &config.theme_tokens);
     warn_if_large_output(&command.output_path, &html, global, &options);
     write_text_file(&command.output_path, &html)?;
     if !global.quiet {
@@ -93,7 +102,10 @@ pub fn render_static_html(command: &RenderFileCommand, global: &GlobalArgs) -> a
 }
 
 pub fn render_vue(command: &RenderFileCommand, global: &GlobalArgs) -> anyhow::Result<()> {
-    let options = validation_options(global)?;
+    let config = runtime_config(global)?;
+    let options = config
+        .clone()
+        .apply_to_options(ValidationOptions::default());
     let payload = read_json(&command.input, options.limits.max_input_bytes)?;
     let normalized = validated_normalized_payload(&payload, global, &options)?;
     let output_dir = command
@@ -109,7 +121,10 @@ pub fn render_vue(command: &RenderFileCommand, global: &GlobalArgs) -> anyhow::R
         let path = renderer_dir.join(relative);
         write_text_file(&path, content)?;
     }
-    write_text_file(&command.output_path, &render_vue_wrapper(&normalized))?;
+    write_text_file(
+        &command.output_path,
+        &render_vue_wrapper_with_theme_tokens(&normalized, &config.theme_tokens),
+    )?;
     if !global.quiet {
         eprintln!(
             "OK: wrote {} and {}",
@@ -141,15 +156,21 @@ pub fn schema(command: &SchemaCommand, global: &GlobalArgs) -> anyhow::Result<()
 }
 
 fn validation_options(global: &GlobalArgs) -> anyhow::Result<ValidationOptions> {
-    let options = ValidationOptions::default();
+    Ok(runtime_config(global)?.apply_to_options(ValidationOptions::default()))
+}
+
+fn runtime_config(global: &GlobalArgs) -> anyhow::Result<RuntimeConfig> {
     let Some(path) = &global.config else {
-        return Ok(options);
+        return Ok(RuntimeConfig::default());
     };
     let source = fs::read_to_string(path)
         .with_context(|| format!("failed to read config {}", path.display()))?;
     let config: RuntimeConfig = serde_json::from_str(&source)
         .with_context(|| format!("failed to parse config {}", path.display()))?;
-    Ok(config.apply_to_options(options))
+    config
+        .validate()
+        .with_context(|| format!("invalid config {}", path.display()))?;
+    Ok(config)
 }
 
 fn warn_if_large_output(
