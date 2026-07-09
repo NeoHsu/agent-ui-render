@@ -6,6 +6,13 @@ developing and releasing the embedded renderer.
 ## Build renderer assets
 
 ```bash
+make setup
+make generate
+```
+
+Equivalent direct commands:
+
+```bash
 cd renderer-vue
 bun install
 bun run typecheck
@@ -20,7 +27,35 @@ generated/renderer.css
 ```
 
 Rust embeds these files through `include_str!`, so they must exist before
-`cargo build`.
+`cargo build` or release verification.
+
+## Renderer build flow
+
+```text
++-----------------------------+
+| renderer-vue/src            |
+| Vue components, CSS, TS     |
++--------------+--------------+
+               |
+               | vue-tsc validates contracts
+               v
++-----------------------------+
+| Type-safe renderer source   |
++--------------+--------------+
+               |
+               | Vite bundles client assets
+               v
++-----------------------------+
+| generated/renderer.js       |
+| generated/renderer.css      |
++--------------+--------------+
+               |
+               | Rust include_str!
+               v
++-----------------------------+
+| agent-ui-render render html |
++-----------------------------+
+```
 
 ## Development rules
 
@@ -31,6 +66,7 @@ Rust embeds these files through `include_str!`, so they must exist before
   color tokens, so new renderer colors should be represented as `--agent-*`
   custom properties instead of hard-coded values.
 - Keep chart decision semantics aligned with Rust `chart_kind_for_view`.
+- Commit `renderer-vue/src` changes and generated asset changes together.
 - Run Rust and Vue checks before release.
 
 ## Handoff bundle
@@ -38,16 +74,51 @@ Rust embeds these files through `include_str!`, so they must exist before
 `agent-ui-render render vue input.json Report.vue` writes:
 
 ```text
-Report.vue
-agent-ui-renderer/
-  AgentUiRenderer.vue
-  components/**/*.vue
-  agent-ui.css
-  chart-model.ts
-  chart-selection.ts
-  format.ts
-  markdown.ts
-  types.ts
++-----------------------+----------------------------------+
+| Output path           | Purpose                          |
++-----------------------+----------------------------------+
+| Report.vue            | wrapper with normalized payload  |
+| agent-ui-renderer/    | adjacent renderer source bundle  |
+|   AgentUiRenderer.vue | root renderer component          |
+|   components/**       | renderer child components        |
+|   agent-ui.css        | renderer styles and tokens       |
+|   *.ts                | chart, format, markdown, types   |
++-----------------------+----------------------------------+
 ```
 
-These files are embedded into the binary from `renderer-vue/src/`.
+Handoff flow:
+
+```text
++----------------------------+
+| Compact input JSON         |
++-------------+--------------+
+              |
+              v
++----------------------------+
+| Validate and normalize     |
++-------------+--------------+
+              |
+              v
++----------------------------+
+| render vue                 |
++-------------+--------------+
+              |
+      +-------+-------------------+
+      |                           |
+      v                           v
++------------------+   +------------------------+
+| Report.vue       |   | agent-ui-renderer/     |
+| payload wrapper  |   | copied source bundle   |
++--------+---------+   +-----------+------------+
+         |                         |
+         +-----------+-------------+
+                     |
+                     v
++----------------------------+
+| Downstream Vue app imports |
+| wrapper and source bundle  |
++----------------------------+
+```
+
+These handoff files are embedded into the binary from `renderer-vue/src/`; update
+that source directory before rebuilding generated assets.

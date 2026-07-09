@@ -1,5 +1,44 @@
 # CLI Reference
 
+`agent-ui-render --help` (and each subcommand's `--help`) is the source of
+truth; this file is a navigational overview. `scripts/check-cli-docs.sh`, run
+by `make check` and CI, fails when a command or global flag documented by
+`--help` goes missing from this file.
+
+## Command lifecycle
+
+```text
++------------------------------------+
+| agent-ui-render [flags] <command>  |
++-----------------+------------------+
+                  |
++--------------------+-----------------------------------------+
+| Command            | Output or behavior                      |
++--------------------+-----------------------------------------+
+| validate           | compact input validation                |
+| normalize          | normalized report JSON                  |
+| plan               | canonical ui.spec JSON                  |
+| render html        | self-contained browser HTML             |
+| render static-html | no-JS HTML fallback                     |
+| render vue         | Vue wrapper plus handoff source bundle  |
+| schema print       | JSON Schema document                    |
+| completion         | shell completion script                 |
++--------------------+-----------------------------------------+
+```
+
+## Global flags
+
+```bash
+-o, --output <human|json>
+--warnings-as-errors
+--quiet
+--pretty
+--config <path>
+```
+
+Use `--config` for trusted host runtime policy such as limits and theme tokens.
+Payloads cannot set those values.
+
 ## `validate`
 
 ```bash
@@ -7,6 +46,18 @@ agent-ui-render validate input.json
 ```
 
 Validates compact version 1 input.
+
+Machine-readable output:
+
+```bash
+agent-ui-render -o json validate input.json
+```
+
+Block on warnings:
+
+```bash
+agent-ui-render --warnings-as-errors validate input.json
+```
 
 ## `normalize`
 
@@ -52,6 +103,19 @@ agent-ui-render render vue input.json Report.vue
 Writes a Vue SFC wrapper and adjacent `agent-ui-renderer/` handoff source
 bundle.
 
+```text
++-----------------------+----------------------------------+
+| Output path           | Purpose                          |
++-----------------------+----------------------------------+
+| Report.vue            | wrapper with normalized payload  |
+| agent-ui-renderer/    | adjacent renderer source bundle  |
+|   AgentUiRenderer.vue | root renderer component          |
+|   components/**       | renderer child components        |
+|   agent-ui.css        | renderer styles and tokens       |
+|   *.ts                | chart, format, markdown, types   |
++-----------------------+----------------------------------+
+```
+
 ## `schema print`
 
 ```bash
@@ -59,6 +123,16 @@ agent-ui-render schema print compact
 agent-ui-render schema print normalized
 agent-ui-render schema print spec
 agent-ui-render schema print config
+```
+
+## `completion`
+
+```bash
+agent-ui-render completion bash
+agent-ui-render completion zsh
+agent-ui-render completion fish
+agent-ui-render completion powershell
+agent-ui-render completion elvish
 ```
 
 ## Config
@@ -170,10 +244,10 @@ infoFg
 
 ## Exit codes
 
-| Code | Meaning                     |
-| ---: | --------------------------- |
-|    0 | Success                     |
-|    1 | Validation or runtime error |
-|    2 | CLI usage error             |
-|    3 | Warning treated as error    |
-|    4 | IO error                    |
+| Code | Meaning |
+| ---: | --- |
+| 0 | Success |
+| 1 | Validation or runtime error |
+| 2 | CLI usage error |
+| 3 | Warning treated as error |
+| 4 | IO error |
