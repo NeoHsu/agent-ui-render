@@ -1,0 +1,36 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "**[0-9]+.[0-9]+.[0-9]+*"
+
+permissions:
+  contents: write
+  attestations: write
+  id-token: write
+
+jobs:
+  dist:
+    runs-on: ubuntu-22.04
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v7.0.0
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: stable
+      - name: Verify generated renderer assets are present
+        run: test -s generated/renderer.js && test -s generated/renderer.css
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --locked
+      - run: cargo audit
+      - name: Release binary smoke verification
+        run: ./scripts/verify-release.sh
+      - name: Install cargo-dist
+        run: cargo install cargo-dist --version 0.31.0 --locked
+      - name: Build and publish release
+        run: |
+          dist host --steps=create --steps=build --steps=upload --steps=release --tag "${GITHUB_REF_NAME}"
