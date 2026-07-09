@@ -1,7 +1,7 @@
 # Agent UI Dataset Contract
 
 This is the home file for dataset rules in compact Agent UI input version 1.
-`references/ui-input.md` defines the whole payload; this file defines how shared
+`ui-input.md` defines the whole payload; this file defines how shared
 tabular data is represented safely and compactly.
 
 ## Boundary
@@ -158,7 +158,8 @@ Use one shared dataset for multiple views:
 
 Compatibility rules:
 
-- `r` only needs a dataset index; optionally add column indexes as `["r", data, columns]` for a projected table.
+- `r` only needs a dataset index; optionally add column indexes as
+  `["r", data, columns]` for a projected table.
 - `t`, `b`, `p`, and `d` need an x/dimension column index.
 - Numeric chart measures must reference numeric-compatible columns.
 - `s` needs numeric x plus at least one distinct numeric y measure.

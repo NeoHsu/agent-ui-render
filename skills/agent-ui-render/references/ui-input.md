@@ -17,12 +17,36 @@ spec.
 - **Renderer:** render only validated normalized data.
 
 ```text
-compact version 1
-  ↓ validate_report
-  ↓ normalize_report
-schema=ui.input.normalized, version=1
-  ↓ render or plan
-browser-openable HTML / schema=ui.spec, version=1 / product UI
++------------------------------+
+| LLM-authored compact input   |
+| version: 1                   |
++---------------+--------------+
+                |
+                v
++------------------------------+
+| validate_report              |
+| structure, refs, safety      |
++---------------+--------------+
+                |
+                v
++------------------------------+
+| normalize_report             |
+| expand codes into domain     |
++---------------+--------------+
+                |
+                v
++------------------------------+
+| Normalized report            |
+| schema=ui.input.normalized   |
++---------------+--------------+
+                |
+        +-------+-------+----------------+
+        |               |                |
+        v               v                v
++---------------+ +-------------+ +----------------+
+| Render HTML   | | Plan ui.spec| | Product UI     |
+| preview       | | JSON        | | handoff        |
++---------------+ +-------------+ +----------------+
 ```
 
 ## Compact top-level schema
@@ -74,26 +98,13 @@ Full dataset rules live in `references/dataset.md`. In short:
 
 ## Column tuples and type codes
 
-Column tuples are:
+Column tuple shapes and type codes are defined in `references/dataset.md`
+(the home file — see its "Column tuples" section). Quick recall only:
+`[key, type, unit?, label?]`; type codes `s n cur pct d dt b dict:<id>`.
 
-```text
-[key, type]
-[key, type, unit]
-[key, type, unit, label]
-```
-
-Type codes:
-
-```text
-s        string
-n        number
-cur      currency number
-pct      percent ratio, e.g. 0.125 means 12.5%
-d        date string
-dt       datetime string
-b        boolean
-dict:id  dictionary-coded string
-```
+Beware: the letter `d` has three unrelated meanings depending on position —
+top-level key `d` (datasets), view code `d` (distribution), and column type
+code `d` (date). Always disambiguate by context.
 
 ## Metrics
 
@@ -155,7 +166,8 @@ Code mapping:
 | `p`  | composition          | pie when safe, else bar |
 | `s`  | relationship         | scatter chart           |
 
-For `r`, omit `columns` to show every column, or pass column indexes to render a compact projected table such as `["r", 0, [0, 2]]`.
+For `r`, omit `columns` to show every column, or pass column indexes to render a
+compact projected table such as `["r", 0, [0, 2]]`.
 
 For `s`, `x` and at least one measure must be numeric-compatible and distinct.
 
@@ -181,39 +193,14 @@ c critical
 
 ## Normalized report
 
-Compact input is only the LLM output boundary. The tool immediately normalizes
-it into readable data:
-
-```json
-{
-  "schema": "ui.input.normalized",
-  "version": 1,
-  "title": "Revenue Overview",
-  "datasets": {
-    "sales": {
-      "columns": [
-        { "key": "month", "label": "Month", "type": "string" },
-        {
-          "key": "revenue",
-          "label": "Revenue",
-          "type": "currency",
-          "unit": "USD"
-        }
-      ],
-      "rows": [["Jan", 120000], ["Feb", 135000]]
-    }
-  },
-  "views": [
-    {
-      "intent": "trend",
-      "data": "sales",
-      "x": "month",
-      "measures": ["revenue"]
-    },
-    { "intent": "precise_records", "data": "sales", "columns": ["month", "revenue"] }
-  ]
-}
-```
+Compact input is only the LLM output boundary. `agent-ui-render normalize`
+expands it into readable objects (`schema=ui.input.normalized`, `version: 1`):
+short keys become full names (`d` -> `datasets`, `v` -> `views`), indexes
+become keys, view codes become intents (`t` -> `trend`, `r` ->
+`precise_records`), type codes expand (`cur` -> `currency`), and labels are
+derived. You never author this form — run
+`agent-ui-render normalize <input.json> <normalized.json>` to inspect it when
+debugging.
 
 ## Runtime limits
 

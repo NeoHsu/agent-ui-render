@@ -39,5 +39,7 @@ jobs:
       - run: cargo fmt --all -- --check
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo test --workspace
+      - name: Check CLI reference docs against --help output
+        run: ./scripts/check-cli-docs.sh
       - name: Release binary smoke verification
         run: ./scripts/verify-release.sh

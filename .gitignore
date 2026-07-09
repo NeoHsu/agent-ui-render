@@ -1,4 +1,5 @@
 /target
 /node_modules
 /renderer-vue/node_modules
+/.pi/
 .DS_Store
