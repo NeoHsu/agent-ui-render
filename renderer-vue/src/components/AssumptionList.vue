@@ -5,7 +5,7 @@ withDefaults(
     title?: string;
   }>(),
   {
-    title: "假設與限制",
+    title: "Assumptions and limitations",
   },
 );
 </script>

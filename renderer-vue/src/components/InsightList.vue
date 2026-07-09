@@ -5,7 +5,7 @@ withDefaults(
     title?: string;
   }>(),
   {
-    title: "重點洞察",
+    title: "Key insights",
   },
 );
 </script>

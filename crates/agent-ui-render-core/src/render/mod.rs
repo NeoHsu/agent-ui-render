@@ -342,7 +342,7 @@ fn render_insights(insights: &[String]) -> String {
         .collect::<Vec<_>>()
         .join("\n");
     format!(
-        "<section class=\"card\"><h2>重點洞察</h2><ul class=\"insights\">{items}</ul></section>"
+        "<section class=\"card\"><h2>Key insights</h2><ul class=\"insights\">{items}</ul></section>"
     )
 }
 
@@ -378,7 +378,9 @@ fn render_assumptions(assumptions: &[String]) -> String {
         .map(|item| format!("<li>{}</li>", escape_html(item)))
         .collect::<Vec<_>>()
         .join("\n");
-    format!("<section class=\"card muted\"><h2>假設與限制</h2><ul>{items}</ul></section>")
+    format!(
+        "<section class=\"card muted\"><h2>Assumptions and limitations</h2><ul>{items}</ul></section>"
+    )
 }
 
 fn render_chart_or_table(dataset: &Dataset, view: &ViewIntent) -> String {

@@ -111,7 +111,7 @@ export function semanticToneForText(value: string): SemanticTone | undefined {
 		return "critical";
 	}
 	if (
-		/\b(?:fail(?:ed|ure)?|error|exception|recoverfail|pg\s*13|incompatible|crash|broken|timeout|invalid|refused|denied)\b|(?:cannot|can't|打不開)/i.test(
+		/\b(?:fail(?:ed|ure)?|error|exception|recoverfail|pg\s*13|incompatible|crash|broken|timeout|invalid|refused|denied)\b|(?:cannot|can't|won't\s+open|does(?:n't| not)\s+open|打不開|無法開啟|失敗|錯誤)/i.test(
 			text,
 		)
 	) {
@@ -152,7 +152,7 @@ export function statusBadgeToneForText(
 
 	const tone = semanticToneForText(text);
 	if (!tone) return undefined;
-	const isShort = text.length <= 36 && !/[。.;:]/.test(text);
+	const isShort = text.length <= 36 && !/[。；：.;:]/.test(text);
 	const isStatusColumn = columnKey
 		? statusLikeColumnPattern.test(columnKey)
 		: false;
