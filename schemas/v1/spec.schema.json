@@ -1,0 +1,173 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/agent-ui/v1/spec.schema.json",
+  "title": "UiSpec",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "version", "blocks"],
+  "properties": {
+    "schema": { "const": "ui.spec" },
+    "version": { "const": 1 },
+    "title": { "type": "string" },
+    "summary": { "type": "string" },
+    "theme": { "enum": ["report-light", "technical-dark", "executive-clean"] },
+    "density": { "enum": ["comfortable", "compact"] },
+    "emphasis": { "enum": ["strong", "subtle"] },
+    "datasets": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/dataset" }
+    },
+    "blocks": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/block" }
+    }
+  },
+  "$defs": {
+    "primitive": { "type": ["string", "number", "boolean", "null"] },
+    "columnType": {
+      "enum": ["string", "number", "currency", "percent", "date", "datetime", "boolean"]
+    },
+    "dataset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["columns", "rows"],
+      "properties": {
+        "columns": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/column" }
+        },
+        "rows": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/primitive" }
+          }
+        }
+      }
+    },
+    "column": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "label", "type"],
+      "properties": {
+        "key": { "type": "string", "minLength": 1 },
+        "label": { "type": "string", "minLength": 1 },
+        "type": { "$ref": "#/$defs/columnType" },
+        "unit": { "type": "string" },
+        "description": { "type": "string" }
+      }
+    },
+    "metricDelta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value"],
+      "properties": {
+        "value": { "type": "number" },
+        "format": { "enum": ["number", "percent"] },
+        "direction": { "enum": ["up", "down", "flat"] },
+        "label": { "type": "string" }
+      }
+    },
+    "block": {
+      "oneOf": [
+        { "$ref": "#/$defs/textBlock" },
+        { "$ref": "#/$defs/markdownBlock" },
+        { "$ref": "#/$defs/metricBlock" },
+        { "$ref": "#/$defs/tableBlock" },
+        { "$ref": "#/$defs/chartBlock" },
+        { "$ref": "#/$defs/alertBlock" }
+      ]
+    },
+    "textBlock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "content"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "type": { "const": "text" },
+        "variant": { "enum": ["paragraph", "note", "insight", "assumption"] },
+        "content": { "type": "string", "minLength": 1 }
+      }
+    },
+    "markdownBlock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "content"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "type": { "const": "markdown" },
+        "title": { "type": "string" },
+        "content": { "type": "string", "minLength": 1 }
+      }
+    },
+    "metricBlock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "label", "value"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "type": { "const": "metric" },
+        "label": { "type": "string", "minLength": 1 },
+        "value": { "$ref": "#/$defs/primitive" },
+        "format": { "enum": ["number", "currency", "percent", "string"] },
+        "unit": { "type": "string" },
+        "delta": { "$ref": "#/$defs/metricDelta" }
+      }
+    },
+    "tableBlock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "data"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "type": { "const": "table" },
+        "data": { "type": "string", "minLength": 1 },
+        "title": { "type": "string" },
+        "columns": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "sort": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["by", "order"],
+          "properties": {
+            "by": { "type": "string", "minLength": 1 },
+            "order": { "enum": ["asc", "desc"] }
+          }
+        }
+      }
+    },
+    "chartBlock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "chart", "data", "x", "y"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "type": { "const": "chart" },
+        "chart": { "enum": ["line", "bar", "scatter", "pie"] },
+        "data": { "type": "string", "minLength": 1 },
+        "title": { "type": "string" },
+        "x": { "type": "string", "minLength": 1 },
+        "y": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "alertBlock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "level", "content"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "type": { "const": "alert" },
+        "level": { "enum": ["info", "success", "warning", "error", "critical"] },
+        "title": { "type": "string" },
+        "content": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

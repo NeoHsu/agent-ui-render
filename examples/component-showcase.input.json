@@ -1,0 +1,102 @@
+{
+  "version": 1,
+  "t": "Agent Report Component Showcase",
+  "s": "Renderer showcase for tables, charts, metrics, alerts, and markdown narrative using the compact version 1 contract.",
+  "theme": "report-light",
+  "density": "comfortable",
+  "emphasis": "strong",
+  "a": [
+    ["i", "Scope", "This preview renders every governed report component from one validated payload."],
+    ["w", "Data quality note", "Sample data is illustrative and should be replaced by tool-sourced rows in real reports."],
+    ["c", "Critical callout component", "Use this for one-line failure summaries, confirmed severe impact, or unrecovered states."],
+    ["s", "Ready for handoff", "Tables, charts, metrics, alerts, markdown narrative, and actions are styled consistently."]
+  ],
+  "m": [
+    ["Impacted Requests", 12850, "n"],
+    ["Peak Error Rate", 0.034, "pct"],
+    ["MTTR", 42, "n", "min"],
+    ["Confidence", 0.82, "pct"]
+  ],
+  "md": [
+    [
+      "Narrative Markdown Block",
+      "### Executive summary\nThe report renderer supports **safe markdown** for narrative sections while keeping metrics, charts, and tables structured. Use this block for RCA explanations, investigation notes, and analysis context.\n\n> {success: Confidence high}. The primary hypothesis is supported by {warning: pending saturation} signals and {error: PG 13 incompatible datadir} evidence.\n\n- Markdown is parsed as a restricted subset\n- Raw markup is not rendered; use {critical: brick} or {error: failed} semantic tokens instead\n- Links such as [incident guide](https://example.com/report-guide) are styled safely\n\n```sql\nselect bucket, error_rate, p95_latency_ms\nfrom service_metrics\nwhere bucket between '10:00' and '11:00';\n```"
+    ],
+    [
+      "Markdown Syntax Coverage",
+      "### Supported syntax\nParagraph text can include **strong emphasis**, *light emphasis*, and `inline code`.\n\n1. Ordered investigation step\n2. Evidence review step\n3. Remediation step\n\n---\n\nUse this for prose only; datasets should still use structured tables and charts."
+    ]
+  ],
+  "d": [
+    [
+      "timeline",
+      [
+        ["phase", "s"],
+        ["minute", "n"],
+        ["error_rate", "pct"],
+        ["p95_latency", "n", "ms"]
+      ],
+      [
+        ["Baseline", 0, 0.004, 180],
+        ["Rollout", 10, 0.012, 260],
+        ["Degraded", 20, 0.034, 540],
+        ["Mitigating", 32, 0.019, 380],
+        ["Recovered", 42, 0.006, 210]
+      ]
+    ],
+    [
+      "impact_mix",
+      [
+        ["impact_area", "s"],
+        ["requests", "n"],
+        ["status", "s"]
+      ],
+      [
+        ["API 5xx", 7600, "critical"],
+        ["Checkout timeouts", 3200, "error"],
+        ["Slow searches", 1450, "warning"],
+        ["Background retries", 600, "recovering"]
+      ]
+    ],
+    [
+      "evidence",
+      [
+        ["source", "s"],
+        ["observation", "s"],
+        ["confidence", "pct"],
+        ["status", "s"]
+      ],
+      [
+        ["Deploy log", "Config rollout completed at 10:09 UTC", 0.88, "confirmed"],
+        ["Metrics", "Error rate peaked near 10:20 UTC", 0.92, "confirmed"],
+        ["Trace sample", "Queue wait time increased during the same window", 0.76, "supporting"],
+        ["Customer tickets", "Reports started after rollout", 0.61, "supporting"],
+        ["Database log", "FATAL: PG 13 datadir is incompatible with PG 11.12 runtime", 0.94, "brick"],
+        ["Recovery job", "RecoverFail during post-upgrade initialization", 0.86, "failed"]
+      ]
+    ],
+    [
+      "actions",
+      [
+        ["action", "s"],
+        ["owner", "s"],
+        ["priority", "s"],
+        ["due", "d"],
+        ["status", "s"]
+      ],
+      [
+        ["Add rollout guardrail", "Platform", "High", "2026-07-16", "planned"],
+        ["Add saturation alert", "SRE", "High", "2026-07-14", "in progress"],
+        ["Document rollback criteria", "API", "Medium", "2026-07-18", "planned"],
+        ["Verify PG version compatibility", "Database", "High", "2026-07-13", "blocked"]
+      ]
+    ]
+  ],
+  "v": [
+    ["t", 0, 0, [2, 3]],
+    ["b", 0, 0, [3]],
+    ["p", 1, 0, [1]],
+    ["r", 2],
+    ["r", 3]
+  ]
+}

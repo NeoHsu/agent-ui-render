@@ -1,0 +1,81 @@
+{
+  "version": 1,
+  "t": "Agent UI Minimal Component Showcase",
+  "s": "Minimal compact showcase covering governed alerts, metrics, markdown, records, trend, comparison, composition, distribution, and relationship views.",
+  "theme": "report-light",
+  "density": "comfortable",
+  "emphasis": "strong",
+  "a": [
+    ["i", "Scope", "This compact payload renders the component types available from version 1."],
+    ["w", "Data quality note", "Sample rows are illustrative and should be replaced by tool-sourced rows in real reports."],
+    ["c", "Critical callout component", "Use this for confirmed severe impact or unrecovered states."],
+    ["s", "Ready for handoff", "Tables, charts, metrics, alerts, and markdown narrative are styled consistently."]
+  ],
+  "m": [
+    ["Impacted Requests", 12850, "n"],
+    ["Peak Error Rate", 0.034, "pct"],
+    ["MTTR", 42, "n", "min"],
+    ["Confidence", 0.82, "pct"]
+  ],
+  "md": [
+    [
+      "Narrative Markdown Block",
+      "### Executive summary\nThe compact renderer supports **safe markdown** for narrative sections while keeping metrics, charts, and tables structured.\n\n> {success: Confidence high}. The primary hypothesis is supported by {warning: pending saturation} signals and {error: incompatible runtime} evidence.\n\n- Markdown is parsed as a restricted subset\n- Raw markup is not rendered\n- Links such as [incident guide](https://example.com/report-guide) are styled safely\n\n```sql\nselect bucket, error_rate, p95_latency_ms\nfrom service_metrics;\n```"
+    ]
+  ],
+  "d": [
+    [
+      "timeline",
+      [
+        ["phase", "s"],
+        ["minute", "n"],
+        ["error_rate", "pct"],
+        ["p95_latency", "n", "ms"]
+      ],
+      [
+        ["Baseline", 0, 0.004, 180],
+        ["Rollout", 10, 0.012, 260],
+        ["Degraded", 20, 0.034, 540],
+        ["Mitigating", 32, 0.019, 380],
+        ["Recovered", 42, 0.006, 210]
+      ]
+    ],
+    [
+      "impact_mix",
+      [
+        ["impact_area", "s"],
+        ["requests", "n"],
+        ["status", "s"]
+      ],
+      [
+        ["API 5xx", 7600, "critical"],
+        ["Checkout timeouts", 3200, "error"],
+        ["Slow searches", 1450, "warning"],
+        ["Background retries", 600, "recovering"]
+      ]
+    ],
+    [
+      "evidence",
+      [
+        ["source", "s"],
+        ["observation", "s"],
+        ["confidence", "pct"],
+        ["status", "s"]
+      ],
+      [
+        ["Deploy log", "Config rollout completed at 10:09 UTC", 0.88, "confirmed"],
+        ["Metrics", "Error rate peaked near 10:20 UTC", 0.92, "confirmed"],
+        ["Trace sample", "Queue wait time increased during the same window", 0.76, "supporting"],
+        ["Customer tickets", "Reports started after rollout", 0.61, "supporting"]
+      ]
+    ]
+  ],
+  "v": [
+    ["t", 0, 0, [2, 3]],
+    ["b", 0, 0, [3]],
+    ["s", 0, 1, [3]],
+    ["p", 1, 0, [1]],
+    ["d", 1, 0, [1]],
+    ["r", 2]
+  ]
+}

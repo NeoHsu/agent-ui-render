@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "t": "Support Queue Comparison",
+  "s": "Enterprise tickets have the longest median response time and the highest open count.",
+  "d": [
+    [
+      "support_segments",
+      [
+        ["segment", "s"],
+        ["open_tickets", "n"],
+        ["median_response_hours", "n", "hours"],
+        ["sla_breach_rate", "pct"]
+      ],
+      [
+        ["Self-serve", 42, 5.2, 0.04],
+        ["Growth", 67, 8.7, 0.09],
+        ["Enterprise", 91, 14.3, 0.18]
+      ]
+    ]
+  ],
+  "m": [
+    ["Total Open Tickets", 200, "n"],
+    ["Highest SLA Breach Rate", 0.18, "pct"]
+  ],
+  "v": [
+    ["b", 0, 0, [1, 2]],
+    ["r", 0]
+  ],
+  "a": [["w", "This comparison does not include ticket severity mix."]]
+}

@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "t": "Revenue Overview",
+  "s": "Revenue increased from January to March while growth remained positive.",
+  "d": [
+    [
+      "sales",
+      [
+        ["month", "s"],
+        ["revenue", "cur", "USD"],
+        ["cost", "cur", "USD"],
+        ["growth", "pct"]
+      ],
+      [
+        ["Jan", 120000, 80000, 0.05],
+        ["Feb", 135000, 90000, 0.125],
+        ["Mar", 150000, 100000, 0.111]
+      ]
+    ]
+  ],
+  "m": [
+    ["Latest Revenue", 150000, "cur", "USD"],
+    ["Latest Growth", 0.111, "pct"]
+  ],
+  "v": [
+    ["t", 0, 0, [1]],
+    ["b", 0, 0, [3]],
+    ["r", 0]
+  ],
+  "a": [["i", "This view is based on three months of data."]]
+}

@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/agent-ui/config.schema.json",
+  "title": "AgentUiRenderConfig",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "maxInputBytes": { "$ref": "#/$defs/nonNegativeInteger" },
+        "maxDatasets": { "$ref": "#/$defs/nonNegativeInteger" },
+        "maxColumnsPerDataset": { "$ref": "#/$defs/nonNegativeInteger" },
+        "maxRowsPerDataset": { "$ref": "#/$defs/nonNegativeInteger" },
+        "maxCellsPerDataset": { "$ref": "#/$defs/nonNegativeInteger" },
+        "maxMetrics": { "$ref": "#/$defs/nonNegativeInteger" },
+        "maxViews": { "$ref": "#/$defs/nonNegativeInteger" },
+        "maxAlerts": { "$ref": "#/$defs/nonNegativeInteger" },
+        "maxMarkdownSections": { "$ref": "#/$defs/nonNegativeInteger" },
+        "maxStringChars": { "$ref": "#/$defs/nonNegativeInteger" },
+        "maxMarkdownSectionChars": { "$ref": "#/$defs/nonNegativeInteger" },
+        "maxTotalMarkdownChars": { "$ref": "#/$defs/nonNegativeInteger" },
+        "warnOutputHtmlBytes": { "$ref": "#/$defs/nonNegativeInteger" }
+      }
+    }
+  },
+  "$defs": {
+    "nonNegativeInteger": {
+      "type": "integer",
+      "minimum": 0
+    }
+  }
+}

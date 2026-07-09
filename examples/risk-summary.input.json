@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "t": "Launch Risk Summary",
+  "s": "Most launch risks are medium severity, with one high-severity integration risk still open.",
+  "d": [
+    [
+      "launch_risks",
+      [
+        ["risk", "s"],
+        ["area", "s"],
+        ["severity_score", "n"],
+        ["probability", "pct"],
+        ["owner", "s"]
+      ],
+      [
+        ["Payment provider timeout", "Integration", 9, 0.35, "Platform"],
+        ["Delayed support macros", "Operations", 5, 0.5, "Support"],
+        ["Missing localized copy", "Content", 4, 0.4, "Marketing"],
+        ["Dashboard event lag", "Analytics", 6, 0.25, "Data"]
+      ]
+    ]
+  ],
+  "m": [["Open Risks", 4, "n"], ["High Severity Risks", 1, "n"]],
+  "v": [
+    ["b", 0, 1, [2, 3]],
+    ["r", 0]
+  ],
+  "a": [["w", "Launch blocker", "Payment provider timeout needs a mitigation owner before go/no-go."]]
+}

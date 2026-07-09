@@ -1,0 +1,198 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/agent-ui/v1/compact.schema.json",
+  "title": "CompactReportInput",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version"],
+  "properties": {
+    "version": { "const": 1 },
+    "t": { "type": "string" },
+    "s": { "type": "string" },
+    "theme": { "enum": ["report-light", "technical-dark", "executive-clean"] },
+    "density": { "enum": ["comfortable", "compact"] },
+    "emphasis": { "enum": ["strong", "subtle"] },
+    "dict": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": { "type": "string" }
+      }
+    },
+    "d": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/dataset" }
+    },
+    "m": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/metric" }
+    },
+    "v": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/view" }
+    },
+    "a": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/alert" }
+    },
+    "md": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/markdownSection" }
+    }
+  },
+  "$defs": {
+    "primitive": {
+      "type": ["string", "number", "boolean", "null"]
+    },
+    "typeCode": {
+      "anyOf": [
+        { "enum": ["s", "n", "cur", "pct", "d", "dt", "b"] },
+        {
+          "type": "string",
+          "pattern": "^dict:[a-z][a-z0-9]*(?:_[a-z0-9]+)*$"
+        }
+      ]
+    },
+    "column": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 4,
+      "prefixItems": [
+        { "type": "string", "minLength": 1 },
+        { "$ref": "#/$defs/typeCode" },
+        { "type": "string" },
+        { "type": "string" }
+      ]
+    },
+    "rowMajorDataset": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "prefixItems": [
+        { "type": "string", "minLength": 1 },
+        {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/column" }
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/primitive" }
+          }
+        }
+      ]
+    },
+    "columnMajorDataset": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "prefixItems": [
+        { "type": "string", "minLength": 1 },
+        { "const": "cols" },
+        {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/column" }
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/primitive" }
+          }
+        }
+      ]
+    },
+    "refDataset": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "prefixItems": [
+        { "type": "string", "minLength": 1 },
+        { "const": "ref" },
+        { "type": "string", "minLength": 1 }
+      ]
+    },
+    "dataset": {
+      "oneOf": [
+        { "$ref": "#/$defs/rowMajorDataset" },
+        { "$ref": "#/$defs/columnMajorDataset" },
+        { "$ref": "#/$defs/refDataset" }
+      ]
+    },
+    "metric": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 4,
+      "prefixItems": [
+        { "type": "string", "minLength": 1 },
+        { "$ref": "#/$defs/primitive" },
+        { "$ref": "#/$defs/typeCode" },
+        { "type": "string" }
+      ]
+    },
+    "viewCode": { "enum": ["o", "r", "t", "b", "d", "p", "s"] },
+    "datasetIndex": { "type": "integer", "minimum": 0 },
+    "columnIndex": { "type": "integer", "minimum": 0 },
+    "measureIndexes": {
+      "type": "array",
+      "items": { "type": "integer", "minimum": 0 }
+    },
+    "view": {
+      "oneOf": [
+        {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "prefixItems": [
+            { "enum": ["o", "r"] },
+            { "$ref": "#/$defs/datasetIndex" }
+          ]
+        },
+        {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "prefixItems": [
+            { "enum": ["t", "b", "p", "s"] },
+            { "$ref": "#/$defs/datasetIndex" },
+            { "$ref": "#/$defs/columnIndex" },
+            { "$ref": "#/$defs/measureIndexes" }
+          ]
+        },
+        {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 4,
+          "prefixItems": [
+            { "const": "d" },
+            { "$ref": "#/$defs/datasetIndex" },
+            { "$ref": "#/$defs/columnIndex" },
+            { "$ref": "#/$defs/measureIndexes" }
+          ]
+        }
+      ]
+    },
+    "alert": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 3,
+      "prefixItems": [
+        { "enum": ["i", "s", "w", "e", "c"] },
+        { "type": "string", "minLength": 1 },
+        { "type": "string", "minLength": 1 }
+      ]
+    },
+    "markdownSection": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 2,
+      "prefixItems": [
+        { "type": "string", "minLength": 1 },
+        { "type": "string", "minLength": 1 }
+      ]
+    }
+  }
+}
