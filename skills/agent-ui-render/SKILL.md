@@ -41,7 +41,7 @@ command -v agent-ui-render \
   (or `cargo run --release -p agent-ui-render --`).
 - Neither exists: still author compact JSON, label the deliverable
   `[UNVALIDATED]`, tell the user to build it with
-  `cargo build --release -p agent-ui-render-cli`, and never fall back to
+  `cargo build --release -p agent-ui-render`, and never fall back to
   hand-written HTML/Vue/React output.
 
 ## Detailed contract (read before authoring)

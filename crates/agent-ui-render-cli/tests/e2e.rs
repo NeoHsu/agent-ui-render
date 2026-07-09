@@ -38,6 +38,52 @@ fn invalid_payload_exits_nonzero() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[test]
+fn valid_payload_json_output_is_one_document_on_stdout() -> Result<(), Box<dyn std::error::Error>> {
+    let input = workspace_root()?.join("examples/revenue-overview.input.json");
+    let output = Command::new(env!("CARGO_BIN_EXE_agent-ui-render"))
+        .args(["--output", "json", "validate"])
+        .arg(input)
+        .output()?;
+
+    assert!(output.status.success());
+    assert!(
+        output.stderr.is_empty(),
+        "expected empty stderr, got: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let value: serde_json::Value = serde_json::from_slice(&output.stdout)?;
+    assert_eq!(value["valid"], true);
+    assert_eq!(value["errors"], serde_json::json!([]));
+    assert_eq!(value["warnings"], serde_json::json!([]));
+    Ok(())
+}
+
+#[test]
+fn invalid_payload_json_output_is_one_document_on_stdout() -> Result<(), Box<dyn std::error::Error>>
+{
+    let temp = tempfile::tempdir()?;
+    let input = temp.path().join("bad.json");
+    fs::write(&input, r#"{"version":1,"t":"<script>bad()</script>"}"#)?;
+    let output = Command::new(env!("CARGO_BIN_EXE_agent-ui-render"))
+        .args(["--output", "json", "validate"])
+        .arg(input)
+        .output()?;
+
+    assert_eq!(output.status.code(), Some(1));
+    assert!(
+        output.stderr.is_empty(),
+        "expected empty stderr, got: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let value: serde_json::Value = serde_json::from_slice(&output.stdout)?;
+    assert_eq!(value["valid"], false);
+    assert!(value["errors"]
+        .as_array()
+        .is_some_and(|errors| !errors.is_empty()));
+    Ok(())
+}
+
+#[test]
 fn config_limits_are_enforced() -> Result<(), Box<dyn std::error::Error>> {
     let temp = tempfile::tempdir()?;
     let config = temp.path().join("agent-ui-render.config.json");

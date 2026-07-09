@@ -4,17 +4,17 @@ use serde_json::json;
 
 use crate::cli::OutputFormat;
 
+pub fn print_validation_result(report: &ValidationReport, output: OutputFormat) {
+    if output == OutputFormat::Json {
+        println!("{}", validation_json(report));
+    } else {
+        print_findings(report, output);
+    }
+}
+
 pub fn print_findings(report: &ValidationReport, output: OutputFormat) {
     if output == OutputFormat::Json {
-        let payload = json!({
-            "valid": report.errors.is_empty(),
-            "errors": report.errors,
-            "warnings": report.warnings,
-        });
-        eprintln!(
-            "{}",
-            serde_json::to_string_pretty(&payload).unwrap_or_else(|_| payload.to_string())
-        );
+        eprintln!("{}", validation_json(report));
         return;
     }
     for finding in &report.errors {
@@ -44,6 +44,15 @@ pub fn print_extra_warnings(warnings: &[Finding], output: OutputFormat) {
         };
         eprintln!("{label}: {}: {}", finding.path, finding.message);
     }
+}
+
+fn validation_json(report: &ValidationReport) -> String {
+    let payload = json!({
+        "valid": report.errors.is_empty(),
+        "errors": report.errors,
+        "warnings": report.warnings,
+    });
+    serde_json::to_string_pretty(&payload).unwrap_or_else(|_| payload.to_string())
 }
 
 pub fn print_json<T: Serialize>(value: &T, pretty: bool) -> anyhow::Result<()> {

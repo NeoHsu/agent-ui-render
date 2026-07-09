@@ -19,11 +19,11 @@ use serde_json::Value;
 
 use crate::{
     cli::{
-        GlobalArgs, InputCommand, IoCommand, RenderFileCommand, SchemaAction, SchemaCommand,
-        SchemaName,
+        GlobalArgs, InputCommand, IoCommand, OutputFormat, RenderFileCommand, SchemaAction,
+        SchemaCommand, SchemaName,
     },
     error::{EXIT_RUNTIME, EXIT_WARNINGS_AS_ERRORS},
-    output::{print_extra_warnings, print_findings, print_json},
+    output::{print_extra_warnings, print_findings, print_json, print_validation_result},
 };
 
 const COMPACT_SCHEMA: &str = include_str!("../../../../schemas/v1/compact.schema.json");
@@ -35,9 +35,9 @@ pub fn validate(command: &InputCommand, global: &GlobalArgs) -> anyhow::Result<(
     let options = validation_options(global)?;
     let payload = read_json(&command.input, options.limits.max_input_bytes)?;
     let report = validate_report_with_options(&payload, &options);
-    print_findings(&report, global.output);
+    print_validation_result(&report, global.output);
     exit_if_findings_block(&report, global);
-    if !global.quiet {
+    if !global.quiet && global.output == OutputFormat::Human {
         eprintln!("OK: payload is valid");
     }
     Ok(())
