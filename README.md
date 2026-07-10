@@ -54,6 +54,33 @@ into validated runtime data and renders the HTML. That reduces output-token
 usage, centralizes rendering and safety rules, and gives agents a smaller,
 repeatable contract for charts, tables, metrics, alerts, and markdown narrative.
 
+## Measured token and cost efficiency
+
+A formal paired benchmark used `claude-sonnet-5` at medium effort across 10
+report cases, with three repetitions per configuration: 30 direct-HTML runs and
+30 `agent-ui-render` runs. Both configurations produced 30/30 artifacts that
+passed the same fact-preservation, structure, and headless-browser checks.
+
+![Mean Claude token composition per accepted artifact][benchmark-token-mix]
+
+The compact payload reduced mean model output from 5,184 to 344 tokens, a
+**93.4% reduction** (95% CI: 92.4% to 94.2%). The full Skill and reference
+context increased effective input tokens, so raw input-plus-output volume rose
+37.1%. This project therefore claims lower **model output**, not lower total
+context volume.
+
+![Output-token savings by report complexity][benchmark-complexity]
+
+Actual measured API cost fell from $0.0817 to $0.0098 per accepted artifact,
+an **88.0% reduction** (95% CI: 85.3% to 89.9%). These costs include prompt
+caching and the single repair call required by each configuration.
+
+![Mean measured API cost per accepted artifact][benchmark-cost]
+
+The benchmark also reduced mean model duration from 37.25 seconds to 3.82
+seconds. See the [formal benchmark report][benchmark-report] for the complete
+method, caveats, confidence intervals, and reproducible harness.
+
 ## Theme showcase
 
 The same compact payload can render as different host-selected themes without
@@ -340,5 +367,9 @@ Build/runtime architecture:
   mirrors for integration checks.
 
 [claude-html]: https://claude.com/blog/using-claude-code-the-unreasonable-effectiveness-of-html
+[benchmark-report]: benchmarks/token-ab/results/formal-sonnet-5.md
+[benchmark-token-mix]: docs/assets/benchmarks/token-composition.svg
+[benchmark-complexity]: docs/assets/benchmarks/output-savings-by-complexity.svg
+[benchmark-cost]: docs/assets/benchmarks/api-cost.svg
 [shot-clean]: docs/assets/screenshots/markdown-brief-executive-clean.png
 [shot-dark]: docs/assets/screenshots/markdown-brief-technical-dark.png

@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="480" viewBox="0 0 960 480" role="img" aria-labelledby="title desc">
+  <title id="title">Mean Claude token composition per accepted artifact</title>
+  <desc id="desc">Direct HTML used 1,313 input and 5,184 output tokens, totaling 6,497. agent-ui-render used 8,566 input and 344 output tokens, totaling 8,910. Output tokens fell 93.4 percent while total token volume rose 37.1 percent.</desc>
+  <rect x="1" y="1" width="958" height="478" rx="20" fill="#ffffff" stroke="#e2e8f0" stroke-width="2"/>
+  <text x="48" y="55" fill="#0f172a" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="26" font-weight="700">Mean Claude tokens per accepted artifact</text>
+  <text x="48" y="85" fill="#475569" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="15">Effective input includes cache creation and cache reads; generated HTML bytes are excluded.</text>
+
+  <rect x="630" y="43" width="16" height="16" rx="3" fill="#cbd5e1"/>
+  <text x="654" y="56" fill="#334155" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="14">Input</text>
+  <rect x="725" y="43" width="16" height="16" rx="3" fill="#7c3aed"/>
+  <text x="749" y="56" fill="#334155" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="14">Output</text>
+
+  <text x="48" y="185" fill="#0f172a" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="18" font-weight="600">Direct HTML</text>
+  <text x="230" y="155" fill="#64748b" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="14">Input 1,313</text>
+  <text x="332" y="155" fill="#6d28d9" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="14" font-weight="600">Output 5,184</text>
+  <rect x="230" y="170" width="92" height="58" rx="8" fill="#cbd5e1"/>
+  <path d="M322 170 H677 A8 8 0 0 1 685 178 V220 A8 8 0 0 1 677 228 H322 Z" fill="#7c3aed"/>
+  <text x="699" y="205" fill="#0f172a" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="17" font-weight="700">6,497 total</text>
+
+  <text x="48" y="295" fill="#0f172a" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="18" font-weight="600">agent-ui-render</text>
+  <text x="230" y="265" fill="#64748b" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="14">Input 8,566</text>
+  <text x="806" y="265" fill="#6d28d9" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="14" font-weight="600">Output 344</text>
+  <path d="M238 280 H830 V338 H238 A8 8 0 0 1 230 330 V288 A8 8 0 0 1 238 280 Z" fill="#cbd5e1"/>
+  <path d="M830 280 H846 A8 8 0 0 1 854 288 V330 A8 8 0 0 1 846 338 H830 Z" fill="#7c3aed"/>
+  <text x="868" y="315" fill="#0f172a" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="17" font-weight="700">8,910</text>
+
+  <line x1="230" y1="376" x2="860" y2="376" stroke="#cbd5e1" stroke-width="2"/>
+  <line x1="230" y1="371" x2="230" y2="382" stroke="#94a3b8"/>
+  <line x1="440" y1="371" x2="440" y2="382" stroke="#94a3b8"/>
+  <line x1="650" y1="371" x2="650" y2="382" stroke="#94a3b8"/>
+  <line x1="860" y1="371" x2="860" y2="382" stroke="#94a3b8"/>
+  <text x="230" y="400" text-anchor="middle" fill="#64748b" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="13">0</text>
+  <text x="440" y="400" text-anchor="middle" fill="#64748b" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="13">3k</text>
+  <text x="650" y="400" text-anchor="middle" fill="#64748b" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="13">6k</text>
+  <text x="860" y="400" text-anchor="middle" fill="#64748b" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="13">9k tokens</text>
+
+  <rect x="48" y="425" width="864" height="35" rx="10" fill="#f5f3ff"/>
+  <text x="480" y="448" text-anchor="middle" fill="#5b21b6" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="16" font-weight="700">Output tokens −93.4%  ·  Total token volume +37.1%</text>
+</svg>

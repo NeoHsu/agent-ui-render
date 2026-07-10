@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="380" viewBox="0 0 960 380" role="img" aria-labelledby="title desc">
+  <title id="title">Mean measured API cost per accepted artifact</title>
+  <desc id="desc">Direct HTML cost 0.0817 US dollars per accepted artifact. agent-ui-render cost 0.0098 US dollars, an 88 percent measured reduction.</desc>
+  <rect x="1" y="1" width="958" height="378" rx="20" fill="#ffffff" stroke="#e2e8f0" stroke-width="2"/>
+  <text x="48" y="55" fill="#0f172a" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="26" font-weight="700">Mean measured API cost per accepted artifact</text>
+  <text x="48" y="85" fill="#475569" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="15">Actual Claude CLI cost, including prompt-cache pricing and repair calls.</text>
+
+  <text x="48" y="157" fill="#0f172a" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="18" font-weight="600">Direct HTML</text>
+  <rect x="230" y="125" width="572" height="52" rx="9" fill="#475569"/>
+  <text x="818" y="158" fill="#0f172a" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="18" font-weight="700">$0.0817</text>
+
+  <text x="48" y="237" fill="#0f172a" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="18" font-weight="600">agent-ui-render</text>
+  <rect x="230" y="205" width="69" height="52" rx="9" fill="#7c3aed"/>
+  <text x="315" y="238" fill="#5b21b6" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="18" font-weight="700">$0.0098</text>
+
+  <line x1="230" y1="293" x2="860" y2="293" stroke="#cbd5e1" stroke-width="2"/>
+  <line x1="230" y1="288" x2="230" y2="299" stroke="#94a3b8"/>
+  <line x1="370" y1="288" x2="370" y2="299" stroke="#94a3b8"/>
+  <line x1="510" y1="288" x2="510" y2="299" stroke="#94a3b8"/>
+  <line x1="650" y1="288" x2="650" y2="299" stroke="#94a3b8"/>
+  <line x1="790" y1="288" x2="790" y2="299" stroke="#94a3b8"/>
+  <text x="230" y="317" text-anchor="middle" fill="#64748b" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="13">$0.00</text>
+  <text x="370" y="317" text-anchor="middle" fill="#64748b" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="13">$0.02</text>
+  <text x="510" y="317" text-anchor="middle" fill="#64748b" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="13">$0.04</text>
+  <text x="650" y="317" text-anchor="middle" fill="#64748b" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="13">$0.06</text>
+  <text x="790" y="317" text-anchor="middle" fill="#64748b" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="13">$0.08</text>
+
+  <rect x="654" y="205" width="258" height="52" rx="12" fill="#f5f3ff"/>
+  <text x="783" y="228" text-anchor="middle" fill="#5b21b6" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="15" font-weight="600">Measured cost reduction</text>
+  <text x="783" y="249" text-anchor="middle" fill="#5b21b6" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="22" font-weight="800">88.0%</text>
+
+  <text x="48" y="352" fill="#64748b" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="13">30 paired runs per configuration · claude-sonnet-5 · medium effort</text>
+</svg>

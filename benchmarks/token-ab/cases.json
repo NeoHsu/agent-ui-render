@@ -1,0 +1,308 @@
+{
+  "cases": [
+    {
+      "id": 1,
+      "name": "subscription-kpis",
+      "complexity": "simple",
+      "title": "Q2 Subscription Snapshot",
+      "summary": "Quarter-end subscription metrics and plan mix.",
+      "metrics": [
+        {"label": "Monthly Recurring Revenue", "value": 248000, "format": "currency", "unit": "USD"},
+        {"label": "Active Accounts", "value": 1842, "format": "number"},
+        {"label": "Logo Churn", "value": 0.028, "format": "percent"}
+      ],
+      "datasets": [
+        {
+          "id": "plans",
+          "columns": [
+            {"key": "plan", "type": "string"},
+            {"key": "accounts", "type": "number"},
+            {"key": "mrr", "type": "currency", "unit": "USD"}
+          ],
+          "rows": [["Starter", 920, 55200], ["Growth", 674, 107840], ["Enterprise", 248, 84960]]
+        }
+      ],
+      "requirements": ["Show all three metrics as prominent cards", "Show every plan row in a records table"],
+      "required_text": ["Q2 Subscription Snapshot", "Starter", "Enterprise"],
+      "features": {"metrics": true, "table": true, "chart": false, "alert": false, "markdown": false}
+    },
+    {
+      "id": 2,
+      "name": "revenue-trend",
+      "complexity": "medium",
+      "title": "First-Half Revenue Trend",
+      "summary": "Monthly revenue and order volume for the first half of 2026.",
+      "metrics": [
+        {"label": "June Revenue", "value": 196000, "format": "currency", "unit": "USD"},
+        {"label": "H1 Orders", "value": 7290, "format": "number"}
+      ],
+      "datasets": [
+        {
+          "id": "monthly_sales",
+          "columns": [
+            {"key": "month", "type": "string"},
+            {"key": "revenue", "type": "currency", "unit": "USD"},
+            {"key": "orders", "type": "number"},
+            {"key": "growth", "type": "percent"}
+          ],
+          "rows": [["January", 120000, 840, 0.0], ["February", 135000, 910, 0.125], ["March", 149000, 1040, 0.104], ["April", 158000, 1120, 0.06], ["May", 176000, 1310, 0.114], ["June", 196000, 2070, 0.114]]
+        }
+      ],
+      "requirements": ["Show revenue as a monthly trend chart", "Show every monthly record in a table", "Do not invent a July value"],
+      "required_text": ["First-Half Revenue Trend", "January", "June"],
+      "features": {"metrics": true, "table": true, "chart": true, "alert": false, "markdown": false}
+    },
+    {
+      "id": 3,
+      "name": "regional-composition",
+      "complexity": "medium",
+      "title": "Regional Revenue Mix",
+      "summary": "Revenue, customers, and margin by sales region.",
+      "metrics": [
+        {"label": "Total Revenue", "value": 532000, "format": "currency", "unit": "USD"},
+        {"label": "Total Customers", "value": 3720, "format": "number"}
+      ],
+      "datasets": [
+        {
+          "id": "regions",
+          "columns": [
+            {"key": "region", "type": "string"},
+            {"key": "revenue", "type": "currency", "unit": "USD"},
+            {"key": "customers", "type": "number"},
+            {"key": "margin", "type": "percent"}
+          ],
+          "rows": [["North", 172000, 1140, 0.31], ["South", 133000, 920, 0.24], ["East", 88000, 650, 0.19], ["West", 139000, 1010, 0.27]]
+        }
+      ],
+      "requirements": ["Show regional revenue composition", "Show a revenue comparison chart", "Include the complete regional table"],
+      "required_text": ["Regional Revenue Mix", "North", "West"],
+      "features": {"metrics": true, "table": true, "chart": true, "alert": false, "markdown": false}
+    },
+    {
+      "id": 4,
+      "name": "incident-review",
+      "complexity": "complex",
+      "title": "Checkout Incident Review",
+      "summary": "Synthetic incident timeline for a checkout degradation on 2026-07-08.",
+      "metrics": [
+        {"label": "Peak Error Rate", "value": 0.034, "format": "percent"},
+        {"label": "Peak P95 Latency", "value": 540, "format": "number", "unit": "ms"},
+        {"label": "Time to Recovery", "value": 42, "format": "number", "unit": "minutes"}
+      ],
+      "datasets": [
+        {
+          "id": "timeline",
+          "columns": [
+            {"key": "phase", "type": "string"},
+            {"key": "minute", "type": "number"},
+            {"key": "error_rate", "type": "percent"},
+            {"key": "p95_latency", "type": "number", "unit": "ms"}
+          ],
+          "rows": [["Baseline", 0, 0.004, 180], ["Rollout", 10, 0.012, 260], ["Degraded", 20, 0.034, 540], ["Mitigating", 32, 0.019, 380], ["Recovered", 42, 0.006, 210]]
+        },
+        {
+          "id": "evidence",
+          "columns": [
+            {"key": "source", "type": "string"},
+            {"key": "observation", "type": "string"},
+            {"key": "confidence", "type": "percent"}
+          ],
+          "rows": [["Deploy log", "Config rollout completed at minute 10", 0.88], ["Trace sample", "Queue wait increased during rollout", 0.76], ["Database log", "No storage errors were observed", 0.94]]
+        }
+      ],
+      "alerts": [{"level": "critical", "title": "Customer impact", "content": "Checkout errors peaked at 3.4%."}],
+      "narrative": "The timing supports correlation with the rollout, but the evidence does not prove a single root cause.",
+      "requirements": ["Show error rate and latency trends", "Include all timeline and evidence rows", "Show the critical customer-impact alert", "Include a narrative section that preserves the caveat"],
+      "required_text": ["Checkout Incident Review", "Degraded", "Database log", "Customer impact"],
+      "features": {"metrics": true, "table": true, "chart": true, "alert": true, "markdown": true}
+    },
+    {
+      "id": 5,
+      "name": "marketing-performance",
+      "complexity": "medium",
+      "title": "Marketing Channel Performance",
+      "summary": "Spend, leads, pipeline, and return by acquisition channel.",
+      "metrics": [
+        {"label": "Total Spend", "value": 174000, "format": "currency", "unit": "USD"},
+        {"label": "Total Pipeline", "value": 846000, "format": "currency", "unit": "USD"}
+      ],
+      "datasets": [
+        {
+          "id": "channels",
+          "columns": [
+            {"key": "channel", "type": "string"},
+            {"key": "spend", "type": "currency", "unit": "USD"},
+            {"key": "leads", "type": "number"},
+            {"key": "pipeline", "type": "currency", "unit": "USD"},
+            {"key": "roas", "type": "number"}
+          ],
+          "rows": [["Paid Search", 62000, 1240, 286000, 4.61], ["Events", 48000, 420, 254000, 5.29], ["Partners", 27000, 310, 191000, 7.07], ["Content", 21000, 860, 78000, 3.71], ["Social", 16000, 590, 37000, 2.31]]
+        }
+      ],
+      "requirements": ["Compare spend and pipeline by channel", "Show the relationship between spend and pipeline", "Include every channel in a table"],
+      "required_text": ["Marketing Channel Performance", "Paid Search", "Partners", "Social"],
+      "features": {"metrics": true, "table": true, "chart": true, "alert": false, "markdown": false}
+    },
+    {
+      "id": 6,
+      "name": "service-relationship",
+      "complexity": "medium",
+      "title": "Service Reliability Relationship",
+      "summary": "Request volume, latency, error rate, and CPU by service.",
+      "metrics": [
+        {"label": "Highest P95 Latency", "value": 410, "format": "number", "unit": "ms"},
+        {"label": "Highest Error Rate", "value": 0.021, "format": "percent"}
+      ],
+      "datasets": [
+        {
+          "id": "services",
+          "columns": [
+            {"key": "service", "type": "string"},
+            {"key": "requests_per_minute", "type": "number"},
+            {"key": "p95_latency", "type": "number", "unit": "ms"},
+            {"key": "error_rate", "type": "percent"},
+            {"key": "cpu", "type": "percent"}
+          ],
+          "rows": [["Gateway", 9400, 180, 0.006, 0.68], ["Catalog", 6100, 230, 0.009, 0.72], ["Checkout", 2800, 410, 0.021, 0.84], ["Payments", 1900, 360, 0.014, 0.77], ["Notifications", 1300, 145, 0.003, 0.42]]
+        }
+      ],
+      "requirements": ["Show a scatter-style relationship between request volume and latency", "Compare error rate by service", "Include the complete service table"],
+      "required_text": ["Service Reliability Relationship", "Gateway", "Checkout", "Notifications"],
+      "features": {"metrics": true, "table": true, "chart": true, "alert": false, "markdown": false}
+    },
+    {
+      "id": 7,
+      "name": "inventory-risk",
+      "complexity": "medium",
+      "title": "Inventory Reorder Risk",
+      "summary": "Current stock, reorder points, and supplier status for priority SKUs.",
+      "metrics": [
+        {"label": "SKUs Below Reorder Point", "value": 3, "format": "number"},
+        {"label": "Blocked SKUs", "value": 1, "format": "number"}
+      ],
+      "datasets": [
+        {
+          "id": "inventory",
+          "columns": [
+            {"key": "sku", "type": "string"},
+            {"key": "category", "type": "string"},
+            {"key": "stock", "type": "number"},
+            {"key": "reorder_point", "type": "number"},
+            {"key": "supplier_status", "type": "string"}
+          ],
+          "rows": [["KB-104", "Keyboards", 18, 30, "confirmed"], ["MS-220", "Mice", 72, 50, "confirmed"], ["HD-512", "Storage", 11, 25, "blocked"], ["CM-410", "Cameras", 9, 20, "supporting"], ["DK-330", "Docks", 44, 35, "confirmed"]]
+        }
+      ],
+      "alerts": [{"level": "warning", "title": "Supplier constraint", "content": "HD-512 is below its reorder point and its supplier is blocked."}],
+      "requirements": ["Compare stock with reorder points", "Show every SKU and status in a table", "Make the supplier warning visible"],
+      "required_text": ["Inventory Reorder Risk", "HD-512", "Supplier constraint", "DK-330"],
+      "features": {"metrics": true, "table": true, "chart": true, "alert": true, "markdown": false}
+    },
+    {
+      "id": 8,
+      "name": "executive-finance",
+      "complexity": "complex",
+      "title": "FY2026 Executive Finance Brief",
+      "summary": "Quarterly profitability and annual revenue contribution by business unit.",
+      "metrics": [
+        {"label": "Annual Revenue", "value": 4720000, "format": "currency", "unit": "USD"},
+        {"label": "Annual Profit", "value": 1280000, "format": "currency", "unit": "USD"},
+        {"label": "Profit Margin", "value": 0.271, "format": "percent"}
+      ],
+      "datasets": [
+        {
+          "id": "quarters",
+          "columns": [
+            {"key": "quarter", "type": "string"},
+            {"key": "revenue", "type": "currency", "unit": "USD"},
+            {"key": "cost", "type": "currency", "unit": "USD"},
+            {"key": "profit", "type": "currency", "unit": "USD"},
+            {"key": "margin", "type": "percent"}
+          ],
+          "rows": [["Q1", 1030000, 770000, 260000, 0.252], ["Q2", 1140000, 830000, 310000, 0.272], ["Q3", 1210000, 870000, 340000, 0.281], ["Q4", 1340000, 970000, 370000, 0.276]]
+        },
+        {
+          "id": "business_units",
+          "columns": [
+            {"key": "unit", "type": "string"},
+            {"key": "revenue", "type": "currency", "unit": "USD"},
+            {"key": "profit", "type": "currency", "unit": "USD"}
+          ],
+          "rows": [["Platform", 2140000, 690000], ["Commerce", 1510000, 390000], ["Services", 1070000, 200000]]
+        }
+      ],
+      "narrative": "Revenue increased each quarter. Q4 delivered the highest profit, while Q3 had the highest margin.",
+      "requirements": ["Show quarterly revenue and profit trends", "Show business-unit revenue composition", "Include both complete datasets as tables", "Include the executive narrative"],
+      "required_text": ["FY2026 Executive Finance Brief", "Q4", "Platform", "Services"],
+      "features": {"metrics": true, "table": true, "chart": true, "alert": false, "markdown": true}
+    },
+    {
+      "id": 9,
+      "name": "delivery-status",
+      "complexity": "complex",
+      "title": "Portfolio Delivery Status",
+      "summary": "Budget, progress, due dates, and delivery status across active programs.",
+      "metrics": [
+        {"label": "Active Programs", "value": 6, "format": "number"},
+        {"label": "Blocked Programs", "value": 2, "format": "number"},
+        {"label": "Total Budget", "value": 1850000, "format": "currency", "unit": "USD"}
+      ],
+      "datasets": [
+        {
+          "id": "programs",
+          "columns": [
+            {"key": "program", "type": "string"},
+            {"key": "owner", "type": "string"},
+            {"key": "budget", "type": "currency", "unit": "USD"},
+            {"key": "progress", "type": "percent"},
+            {"key": "status", "type": "string"},
+            {"key": "due", "type": "date"}
+          ],
+          "rows": [["Identity Refresh", "Security", 420000, 0.78, "confirmed", "2026-09-15"], ["Data Residency", "Platform", 380000, 0.52, "blocked", "2026-10-01"], ["Checkout Redesign", "Commerce", 310000, 0.66, "supporting", "2026-08-28"], ["Billing Migration", "Finance", 290000, 0.41, "blocked", "2026-11-20"], ["Search Upgrade", "Catalog", 260000, 0.84, "confirmed", "2026-08-12"], ["Support Portal", "CX", 190000, 0.91, "confirmed", "2026-07-30"]]
+        }
+      ],
+      "alerts": [{"level": "error", "title": "Schedule risk", "content": "Data Residency and Billing Migration are blocked."}],
+      "requirements": ["Compare program budgets", "Show every program with progress, status, and due date", "Show the schedule-risk alert", "Do not invent owners or revised dates"],
+      "required_text": ["Portfolio Delivery Status", "Data Residency", "Billing Migration", "Schedule risk"],
+      "features": {"metrics": true, "table": true, "chart": true, "alert": true, "markdown": false}
+    },
+    {
+      "id": 10,
+      "name": "support-operations",
+      "complexity": "complex",
+      "title": "Customer Support Operations",
+      "summary": "Weekly ticket volume, resolution time, satisfaction, backlog, and channel mix.",
+      "metrics": [
+        {"label": "Week 6 Tickets", "value": 1480, "format": "number"},
+        {"label": "Week 6 Satisfaction", "value": 0.92, "format": "percent"},
+        {"label": "Week 6 Backlog", "value": 318, "format": "number"}
+      ],
+      "datasets": [
+        {
+          "id": "weekly_support",
+          "columns": [
+            {"key": "week", "type": "string"},
+            {"key": "tickets", "type": "number"},
+            {"key": "resolution_hours", "type": "number", "unit": "hours"},
+            {"key": "satisfaction", "type": "percent"},
+            {"key": "backlog", "type": "number"}
+          ],
+          "rows": [["Week 1", 1210, 19.4, 0.89, 410], ["Week 2", 1275, 18.1, 0.9, 395], ["Week 3", 1330, 17.6, 0.91, 372], ["Week 4", 1415, 16.9, 0.9, 361], ["Week 5", 1450, 15.8, 0.92, 336], ["Week 6", 1480, 14.7, 0.92, 318]]
+        },
+        {
+          "id": "channels",
+          "columns": [
+            {"key": "channel", "type": "string"},
+            {"key": "tickets", "type": "number"},
+            {"key": "satisfaction", "type": "percent"}
+          ],
+          "rows": [["Email", 590, 0.9], ["Chat", 510, 0.94], ["Phone", 240, 0.91], ["Community", 140, 0.93]]
+        }
+      ],
+      "narrative": "Ticket volume increased while resolution time and backlog declined. Satisfaction reached 92% in the final two weeks.",
+      "requirements": ["Show ticket, resolution-time, and backlog trends", "Show channel composition or comparison", "Include both complete datasets as tables", "Include the operations narrative"],
+      "required_text": ["Customer Support Operations", "Week 1", "Week 6", "Community"],
+      "features": {"metrics": true, "table": true, "chart": true, "alert": false, "markdown": true}
+    }
+  ]
+}

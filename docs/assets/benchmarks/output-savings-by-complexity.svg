@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="430" viewBox="0 0 960 430" role="img" aria-labelledby="title desc">
+  <title id="title">Output-token savings by report complexity</title>
+  <desc id="desc">Output-token savings were 93.1 percent for simple reports, 94.8 percent for medium reports, and 91.8 percent for complex reports.</desc>
+  <rect x="1" y="1" width="958" height="428" rx="20" fill="#ffffff" stroke="#e2e8f0" stroke-width="2"/>
+  <text x="48" y="55" fill="#0f172a" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="26" font-weight="700">Output-token savings by report complexity</text>
+  <text x="48" y="85" fill="#475569" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="15">Paired comparison against directly authored HTML/CSS/JS.</text>
+
+  <text x="48" y="157" fill="#0f172a" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="18" font-weight="600">Simple</text>
+  <text x="145" y="157" fill="#64748b" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="13">3 pairs</text>
+  <rect x="230" y="127" width="600" height="40" rx="8" fill="#ede9fe"/>
+  <rect x="230" y="127" width="559" height="40" rx="8" fill="#8b5cf6"/>
+  <text x="805" y="154" fill="#5b21b6" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="18" font-weight="800">93.1%</text>
+
+  <text x="48" y="227" fill="#0f172a" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="18" font-weight="600">Medium</text>
+  <text x="145" y="227" fill="#64748b" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="13">15 pairs</text>
+  <rect x="230" y="197" width="600" height="40" rx="8" fill="#ede9fe"/>
+  <rect x="230" y="197" width="569" height="40" rx="8" fill="#7c3aed"/>
+  <text x="815" y="224" fill="#5b21b6" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="18" font-weight="800">94.8%</text>
+
+  <text x="48" y="297" fill="#0f172a" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="18" font-weight="600">Complex</text>
+  <text x="145" y="297" fill="#64748b" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="13">12 pairs</text>
+  <rect x="230" y="267" width="600" height="40" rx="8" fill="#ede9fe"/>
+  <rect x="230" y="267" width="551" height="40" rx="8" fill="#6d28d9"/>
+  <text x="797" y="294" fill="#5b21b6" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="18" font-weight="800">91.8%</text>
+
+  <line x1="230" y1="342" x2="830" y2="342" stroke="#cbd5e1" stroke-width="2"/>
+  <text x="230" y="365" text-anchor="middle" fill="#64748b" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="13">0%</text>
+  <text x="530" y="365" text-anchor="middle" fill="#64748b" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="13">50%</text>
+  <text x="830" y="365" text-anchor="middle" fill="#64748b" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="13">100%</text>
+
+  <rect x="48" y="386" width="864" height="28" rx="9" fill="#f5f3ff"/>
+  <text x="480" y="405" text-anchor="middle" fill="#5b21b6" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="15" font-weight="700">All 10 evals reduced model output by at least 90%</text>
+</svg>
