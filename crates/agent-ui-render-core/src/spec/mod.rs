@@ -1,11 +1,11 @@
-use serde_json::{json, Map, Value};
+use serde_json::{Map, Value, json};
 
 use crate::{
     chart::{
         bar_orientation_for_view, chart_kind_for_view, first_non_measure_column,
         first_numeric_columns,
     },
-    domain::{Dataset, Report, ViewIntent, FORMAT_VERSION, SPEC_SCHEMA},
+    domain::{Dataset, FORMAT_VERSION, Report, SPEC_SCHEMA, ViewIntent},
 };
 
 #[must_use]
