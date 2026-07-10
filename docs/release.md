@@ -81,8 +81,8 @@ HTML/static HTML smoke artifacts.
 ## Tag release
 
 ```bash
-git tag v0.1.0
-git push origin v0.1.0
+git tag v0.2.0
+git push origin v0.2.0
 ```
 
 The privileged release workflow uses the committed generated assets, runs
