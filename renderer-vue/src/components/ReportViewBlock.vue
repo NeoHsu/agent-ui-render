@@ -9,14 +9,20 @@ const props = defineProps<{
   view: ViewIntent;
   dataset?: Dataset;
   index: number;
+  layout: "full" | "half";
 }>();
 
 const resolvedDataset = computed(() => props.dataset ?? null);
-const title = computed(() => props.view.title || viewTitle(props.view, props.index));
+const title = computed(
+  () =>
+    props.view.title ||
+    viewTitle(props.view, resolvedDataset.value, props.index),
+);
 const sectionClasses = computed(() => [
   "card",
   "view-card",
   `view-card-${safeClass(props.view.intent)}`,
+  `view-card-${props.layout}`,
 ]);
 const tableDataset = computed(() =>
   resolvedDataset.value

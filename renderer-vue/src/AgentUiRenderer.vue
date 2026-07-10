@@ -39,6 +39,18 @@ const metrics = computed(() => props.input.metrics ?? []);
 const insights = computed(() => props.input.insights ?? []);
 const markdownSections = computed(() => props.input.markdown ?? []);
 const views = computed(() => props.input.views ?? []);
+const orderedViews = computed(() => [
+  ...views.value.filter((view) => view.intent !== "precise_records"),
+  ...views.value.filter((view) => view.intent === "precise_records"),
+]);
+const chartViews = computed(() =>
+  orderedViews.value.filter((view) => view.intent !== "precise_records"),
+);
+const useSplitChartLayout = computed(
+  () =>
+    chartViews.value.length > 1 &&
+    !chartViews.value.some((view) => view.intent === "trend"),
+);
 const assumptions = computed(() => props.input.assumptions ?? []);
 </script>
 
@@ -61,13 +73,20 @@ const assumptions = computed(() => props.input.assumptions ?? []);
       :content="section.content"
     />
 
-    <ReportViewBlock
-      v-for="(view, index) in views"
-      :key="`${view.data}-${view.intent}-${index}`"
-      :view="view"
-      :dataset="input.datasets?.[view.data]"
-      :index="index"
-    />
+    <div v-if="orderedViews.length" class="report-views">
+      <ReportViewBlock
+        v-for="(view, index) in orderedViews"
+        :key="`${view.data}-${view.intent}-${index}`"
+        :view="view"
+        :dataset="input.datasets?.[view.data]"
+        :index="index"
+        :layout="
+          view.intent !== 'precise_records' && useSplitChartLayout
+            ? 'half'
+            : 'full'
+        "
+      />
+    </div>
 
     <AssumptionList :assumptions="assumptions" />
     <ReportFooter />

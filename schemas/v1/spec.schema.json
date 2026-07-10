@@ -147,6 +147,7 @@
         "id": { "type": "string", "minLength": 1 },
         "type": { "const": "chart" },
         "chart": { "enum": ["line", "bar", "scatter", "pie"] },
+        "orientation": { "enum": ["horizontal", "vertical"] },
         "data": { "type": "string", "minLength": 1 },
         "title": { "type": "string" },
         "x": { "type": "string", "minLength": 1 },

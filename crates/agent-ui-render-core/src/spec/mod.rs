@@ -1,8 +1,11 @@
-use serde_json::{Map, Value, json};
+use serde_json::{json, Map, Value};
 
 use crate::{
-    chart::{chart_kind_for_view, first_non_measure_column, first_numeric_columns},
-    domain::{Dataset, FORMAT_VERSION, Report, SPEC_SCHEMA, ViewIntent},
+    chart::{
+        bar_orientation_for_view, chart_kind_for_view, first_non_measure_column,
+        first_numeric_columns,
+    },
+    domain::{Dataset, Report, ViewIntent, FORMAT_VERSION, SPEC_SCHEMA},
 };
 
 #[must_use]
@@ -152,10 +155,14 @@ fn add_view_blocks(blocks: &mut Vec<Value>, input: &Report) {
             )),
         );
         block.insert("type".to_owned(), json!("chart"));
-        block.insert(
-            "chart".to_owned(),
-            json!(chart_kind_for_view(view, dataset)),
-        );
+        let chart_kind = chart_kind_for_view(view, dataset);
+        block.insert("chart".to_owned(), json!(chart_kind));
+        if chart_kind == "bar" {
+            block.insert(
+                "orientation".to_owned(),
+                json!(bar_orientation_for_view(view, dataset)),
+            );
+        }
         block.insert("data".to_owned(), json!(view.data));
         block.insert("x".to_owned(), json!(x.expect("checked")));
         block.insert("y".to_owned(), json!(y));

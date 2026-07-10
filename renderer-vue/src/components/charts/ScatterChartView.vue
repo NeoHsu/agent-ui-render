@@ -1,43 +1,99 @@
 <script setup lang="ts">
-import type { ScatterPoint } from "../../chart-model";
+import type { ScatterChartModel } from "../../chart-model";
 
 defineProps<{
-  points: ScatterPoint[];
-  label: string;
+  model: ScatterChartModel;
   color: string;
   chartLabel: string;
 }>();
 </script>
 
 <template>
-  <div class="chart">
-    <svg viewBox="0 0 760 280" role="img" :aria-label="chartLabel">
+  <div class="chart scatter-chart">
+    <svg viewBox="0 0 760 300" role="img" :aria-label="chartLabel">
       <rect
-        x="54"
-        y="22"
-        width="682"
-        height="204"
-        rx="14"
+        x="72"
+        y="32"
+        width="644"
+        height="190"
+        rx="12"
         fill="var(--agent-chart-bg)"
         stroke="var(--agent-chart-border)"
       />
-      <line x1="54" y1="226" x2="736" y2="226" stroke="var(--agent-chart-axis)" />
-      <line x1="54" y1="22" x2="54" y2="226" stroke="var(--agent-chart-axis)" />
-      <text x="54" y="18" :fill="color" class="svg-label">
-        {{ label }}
+
+      <g v-for="tick in model.yTicks" :key="tick.key">
+        <line
+          x1="72"
+          :y1="tick.position"
+          x2="716"
+          :y2="tick.position"
+          class="chart-grid-line"
+        />
+        <text
+          x="62"
+          :y="Number(tick.position) + 4"
+          text-anchor="end"
+          class="chart-axis-label"
+        >
+          {{ tick.label }}
+        </text>
+      </g>
+
+      <g v-for="tick in model.xTicks" :key="tick.key">
+        <line
+          :x1="tick.position"
+          y1="32"
+          :x2="tick.position"
+          y2="222"
+          class="chart-grid-line chart-grid-line-vertical"
+        />
+        <text
+          :x="tick.position"
+          y="246"
+          text-anchor="middle"
+          class="chart-axis-label"
+        >
+          {{ tick.label }}
+        </text>
+      </g>
+
+      <text x="394" y="282" text-anchor="middle" class="chart-axis-title">
+        {{ model.xLabel }}
       </text>
-      <circle
-        v-for="item in points"
-        :key="item.key"
-        class="scatter-point"
-        :cx="item.cx"
-        :cy="item.cy"
-        r="5"
-        :fill="color"
-        opacity="0.88"
+      <text
+        x="18"
+        y="127"
+        text-anchor="middle"
+        class="chart-axis-title"
+        transform="rotate(-90 18 127)"
       >
-        <title>{{ item.title }}</title>
-      </circle>
+        {{ model.yLabel }}
+      </text>
+      <text x="72" y="19" :fill="color" class="svg-label">
+        {{ model.label }}
+      </text>
+
+      <g v-for="item in model.points" :key="item.key">
+        <circle
+          class="scatter-point"
+          :cx="item.cx"
+          :cy="item.cy"
+          r="6"
+          :fill="color"
+          stroke="var(--agent-surface)"
+          stroke-width="2"
+        >
+          <title>{{ item.title }}</title>
+        </circle>
+        <text
+          v-if="item.label"
+          :x="Number(item.cx) + 9"
+          :y="Number(item.cy) - 9"
+          class="scatter-label"
+        >
+          {{ item.label }}
+        </text>
+      </g>
     </svg>
   </div>
 </template>

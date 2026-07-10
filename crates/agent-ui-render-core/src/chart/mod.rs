@@ -21,6 +21,132 @@ pub fn chart_kind_for_view(view: &ViewIntent, dataset: &Dataset) -> &'static str
 }
 
 #[must_use]
+pub fn bar_orientation_for_view(view: &ViewIntent, dataset: &Dataset) -> &'static str {
+    if view.intent != crate::domain::VIEW_INTENT_COMPARISON
+        || !has_compact_temporal_categories(dataset, view)
+    {
+        return "horizontal";
+    }
+    if has_compatible_measures(dataset, view) {
+        "vertical"
+    } else {
+        "horizontal"
+    }
+}
+
+fn has_compact_temporal_categories(dataset: &Dataset, view: &ViewIntent) -> bool {
+    if !(2..=8).contains(&dataset.rows.len()) {
+        return false;
+    }
+    let Some(x_index) = column_index(dataset, view.x.as_deref()) else {
+        return false;
+    };
+    if matches!(
+        dataset.columns[x_index].column_type.as_deref(),
+        Some(crate::domain::COLUMN_TYPE_DATE) | Some(crate::domain::COLUMN_TYPE_DATETIME)
+    ) {
+        return true;
+    }
+    dataset
+        .rows
+        .iter()
+        .all(|row| row.get(x_index).is_some_and(is_temporal_category))
+}
+
+fn has_compatible_measures(dataset: &Dataset, view: &ViewIntent) -> bool {
+    measure_keys(dataset, view)
+        .iter()
+        .filter_map(|key| column_index(dataset, Some(key)))
+        .map(|index| {
+            let column = &dataset.columns[index];
+            format!(
+                "{}:{}",
+                column.column_type.as_deref().unwrap_or_default(),
+                column.unit.as_deref().unwrap_or_default()
+            )
+        })
+        .collect::<BTreeSet<_>>()
+        .len()
+        == 1
+}
+
+fn is_temporal_category(value: &Value) -> bool {
+    let text = value
+        .as_str()
+        .map_or_else(|| value.to_string(), str::to_owned);
+    is_temporal_label(text.trim())
+}
+
+fn is_temporal_label(text: &str) -> bool {
+    let upper = text.trim().to_ascii_uppercase();
+    let first = upper
+        .split(|character: char| character.is_whitespace() || ",/'’-".contains(character))
+        .next()
+        .unwrap_or_default();
+    is_year(first)
+        || is_iso_period(&upper)
+        || matches!(first, "Q1" | "Q2" | "Q3" | "Q4" | "1Q" | "2Q" | "3Q" | "4Q")
+        || is_week_period(&upper)
+        || matches!(
+            first,
+            "JAN"
+                | "JANUARY"
+                | "FEB"
+                | "FEBRUARY"
+                | "MAR"
+                | "MARCH"
+                | "APR"
+                | "APRIL"
+                | "MAY"
+                | "JUN"
+                | "JUNE"
+                | "JUL"
+                | "JULY"
+                | "AUG"
+                | "AUGUST"
+                | "SEP"
+                | "SEPT"
+                | "SEPTEMBER"
+                | "OCT"
+                | "OCTOBER"
+                | "NOV"
+                | "NOVEMBER"
+                | "DEC"
+                | "DECEMBER"
+        )
+}
+
+fn is_year(text: &str) -> bool {
+    text.len() == 4
+        && text
+            .parse::<u16>()
+            .is_ok_and(|year| (1900..=2099).contains(&year))
+}
+
+fn is_iso_period(text: &str) -> bool {
+    text.len() >= 7
+        && text
+            .as_bytes()
+            .get(4)
+            .is_some_and(|byte| matches!(byte, b'-' | b'/'))
+        && text.get(..4).is_some_and(is_year)
+}
+
+fn is_week_period(text: &str) -> bool {
+    let compact = text.replace("WEEK", "W").replace(' ', "");
+    compact
+        .strip_prefix('W')
+        .and_then(|rest| {
+            rest.split(|character| [',', '/', '-'].contains(&character))
+                .next()
+        })
+        .is_some_and(|week| {
+            week.parse::<u8>()
+                .is_ok_and(|value| (1..=53).contains(&value))
+        })
+}
+
+#[must_use]
 pub fn can_use_pie_chart(dataset: &Dataset, view: &ViewIntent, max_categories: usize) -> bool {
     if view.intent != crate::domain::VIEW_INTENT_COMPOSITION {
         return false;

@@ -1,16 +1,11 @@
 <script setup lang="ts">
-withDefaults(
-  defineProps<{
-    text?: string;
-  }>(),
-  {
-    text: "Structured report generated from validated input.",
-  },
-);
+defineProps<{
+  text?: string;
+}>();
 </script>
 
 <template>
-  <footer class="footer">
+  <footer v-if="text" class="footer">
     {{ text }}
   </footer>
 </template>

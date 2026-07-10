@@ -1,4 +1,10 @@
-import type { Column, Dataset, Metric, Primitive, ViewIntent } from "./types";
+import type {
+	Column,
+	Dataset,
+	Metric,
+	Primitive,
+	ViewIntent,
+} from "./types.js";
 
 export type SemanticTone =
 	| "critical"
@@ -60,12 +66,22 @@ const exactStatusTones = new Map<string, SemanticTone>([
 const statusLikeColumnPattern =
 	/(?:status|state|result|severity|priority|level|confidence|outcome|health|phase)/i;
 
+const numberFormatter = new Intl.NumberFormat("en-US", {
+	maximumFractionDigits: 2,
+});
+
 export function formatMetric(metric: Metric): string {
+	if (typeof metric.value === "number" && metric.format === "currency") {
+		return formatCurrency(metric.value, metric.unit);
+	}
 	const value = formatPrimitive(metric.value, metric.format);
 	return metric.unit ? `${value} ${metric.unit}` : value;
 }
 
 export function formatCell(value: Primitive, column: Column): string {
+	if (typeof value === "number" && column.type === "currency") {
+		return formatCurrency(value, column.unit);
+	}
 	const rendered = formatPrimitive(value, column.type);
 	return column.unit && value !== null
 		? `${rendered} ${column.unit}`
@@ -75,14 +91,28 @@ export function formatCell(value: Primitive, column: Column): string {
 export function formatPrimitive(value: Primitive, format?: string): string {
 	if (value === null) return "—";
 	if (typeof value === "number") {
-		if (format === "percent") return `${formatNumber(value * 100)}%`;
-		return formatNumber(value);
+		if (format === "percent") return `${numberFormatter.format(value * 100)}%`;
+		return numberFormatter.format(value);
 	}
 	return String(value);
 }
 
-function formatNumber(value: number): string {
-	return Number.isInteger(value) ? String(value) : value.toFixed(1);
+function formatCurrency(value: number, currency?: string): string {
+	if (!currency || !/^[A-Z]{3}$/.test(currency)) {
+		const rendered = numberFormatter.format(value);
+		return currency ? `${rendered} ${currency}` : rendered;
+	}
+	try {
+		return new Intl.NumberFormat("en-US", {
+			style: "currency",
+			currency,
+			currencyDisplay: "narrowSymbol",
+			minimumFractionDigits: 0,
+			maximumFractionDigits: Number.isInteger(value) ? 0 : 2,
+		}).format(value);
+	} catch {
+		return `${numberFormatter.format(value)} ${currency}`;
+	}
 }
 
 export function safeClass(value: string): string {
@@ -246,15 +276,54 @@ export function extent(values: number[]): [number, number] {
 	return [min - pad, max + pad];
 }
 
-export function viewTitle(view: ViewIntent, index: number): string {
-	const labels: Record<ViewIntent["intent"], string> = {
-		overview: "Overview",
-		precise_records: "Records",
-		trend: "Trend",
-		comparison: "Comparison",
-		distribution: "Distribution",
-		composition: "Composition",
-		relationship: "Relationship",
+type ViewTitleContext = {
+	data: string;
+	x: string;
+	measures: string;
+};
+
+const viewTitleBuilders: Record<
+	ViewIntent["intent"],
+	(context: ViewTitleContext) => string
+> = {
+	overview: ({ data }) => `${data} Overview`,
+	precise_records: ({ data }) => `${data} Details`,
+	trend: ({ data, measures }) => `${measures || data} Trend`,
+	comparison: ({ data, x, measures }) =>
+		measures && x ? `${measures} by ${x}` : `${data} Comparison`,
+	distribution: ({ data, x }) => `${x || data} Distribution`,
+	composition: ({ data, x, measures }) =>
+		measures && x ? `${measures} Composition by ${x}` : `${data} Composition`,
+	relationship: ({ data, x, measures }) =>
+		measures && x ? `${measures} vs. ${x}` : `${data} Relationship`,
+};
+
+export function viewTitle(
+	view: ViewIntent,
+	dataset: Dataset | null,
+	index: number,
+): string {
+	const context = {
+		data: titleize(view.data),
+		x: dataset ? columnLabel(dataset, view.x) : "",
+		measures: dataset
+			? joinLabels(
+					measureKeys(dataset, view).map((key) => columnLabel(dataset, key)),
+				)
+			: "",
 	};
-	return `${labels[view.intent] || "View"} ${index + 1}`;
+	const builder = viewTitleBuilders[view.intent];
+	return builder ? builder(context) : `View ${index + 1}`;
+}
+
+function titleize(value: string): string {
+	return value
+		.replace(/[_-]+/g, " ")
+		.replace(/\b\w/g, (character) => character.toUpperCase());
+}
+
+function joinLabels(labels: string[]): string {
+	if (labels.length <= 1) return labels[0] ?? "";
+	if (labels.length === 2) return `${labels[0]} & ${labels[1]}`;
+	return `${labels.slice(0, -1).join(", ")} & ${labels.at(-1)}`;
 }

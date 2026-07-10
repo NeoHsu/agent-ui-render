@@ -2,7 +2,7 @@ use std::{collections::BTreeSet, error::Error, io, path::PathBuf, process::Comma
 
 use agent_ui_render_core::{
     Limits, RuntimeConfig, ThemeTokens, ValidationOptions,
-    chart::chart_kind_for_view,
+    chart::{bar_orientation_for_view, chart_kind_for_view},
     domain, is_safe_css_color_value,
     markdown::markdown_to_html,
     normalize_report, plan_ui_spec,
@@ -576,13 +576,65 @@ fn composition_chart_falls_back_from_pie_for_many_categories() -> Result<(), Box
 }
 
 #[test]
+fn grouped_bar_orientation_and_static_rendering_are_complete() -> Result<(), Box<dyn Error>> {
+    let payload = json!({
+        "version": 1,
+        "d": [
+            [
+                "quarters",
+                [["quarter", "s"], ["revenue", "cur", "USD"], ["profit", "cur", "USD"]],
+                [["Q1", 1030000, 260000], ["Q2", 1140000, 310000], ["Q3", 1210000, 340000], ["Q4", 1340000, 370000]]
+            ],
+            [
+                "channels",
+                [["channel", "s"], ["spend", "cur", "USD"], ["pipeline", "cur", "USD"]],
+                [["Paid Search", 62000, 286000], ["Events", 48000, 254000], ["Partners", 27000, 191000]]
+            ]
+        ],
+        "v": [["b", 0, 0, [1, 2]], ["b", 1, 0, [1, 2]]]
+    });
+    let report = validate_report(&payload);
+    assert!(report.errors.is_empty(), "{:#?}", report.errors);
+    let normalized = normalize_report(&payload)?.input;
+    let quarters = normalized
+        .datasets
+        .get("quarters")
+        .ok_or_else(|| io::Error::other("quarters dataset should exist"))?;
+    let channels = normalized
+        .datasets
+        .get("channels")
+        .ok_or_else(|| io::Error::other("channels dataset should exist"))?;
+    assert_eq!(
+        bar_orientation_for_view(&normalized.views[0], quarters),
+        "vertical"
+    );
+    assert_eq!(
+        bar_orientation_for_view(&normalized.views[1], channels),
+        "horizontal"
+    );
+
+    let spec = plan_ui_spec(&normalized);
+    assert_eq!(spec["blocks"][0]["orientation"], "vertical");
+    assert_eq!(spec["blocks"][1]["orientation"], "horizontal");
+
+    let html = render_static_html(&normalized);
+    assert!(html.contains("vertical-bar-chart"));
+    assert!(html.contains("bar-axis"));
+    assert!(html.contains("Revenue"));
+    assert!(html.contains("Profit"));
+    assert!(html.contains("Spend"));
+    assert!(html.contains("Pipeline"));
+    Ok(())
+}
+
+#[test]
 fn rust_and_vue_chart_and_markdown_parity() -> Result<(), Box<dyn Error>> {
     let payload = json!({
         "version": 1,
         "d": [[
             "share",
             [["segment", "s"], ["value", "n"], ["latency", "n"]],
-            [["A", 3, 120], ["B", 2, 180], ["C", 1, 220]]
+            [["Q1", 3, 120], ["Q2", 2, 180], ["Q3", 1, 220]]
         ]],
         "v": [
             ["t", 0, 0, [1]],
@@ -601,6 +653,11 @@ fn rust_and_vue_chart_and_markdown_parity() -> Result<(), Box<dyn Error>> {
         .iter()
         .map(|view| chart_kind_for_view(view, dataset).to_owned())
         .collect::<Vec<_>>();
+    let rust_orientations = normalized
+        .views
+        .iter()
+        .map(|view| bar_orientation_for_view(view, dataset).to_owned())
+        .collect::<Vec<_>>();
     let markdown_samples = vec![
         "# Heading\n\nParagraph with **strong**, *em*, `code`, {warning: pending}, and [guide](https://example.com/report-guide).",
         "> quoted note\n\n- one\n- two\n\n1. first\n2. second\n\n```sql\nselect 1;\n```",
@@ -612,13 +669,14 @@ fn rust_and_vue_chart_and_markdown_parity() -> Result<(), Box<dyn Error>> {
 
     let script = format!(
         r#"
-import {{ chartKindForView }} from "./renderer-vue/src/chart-selection.ts";
+import {{ barOrientationForView, chartKindForView }} from "./renderer-vue/src/chart-selection.ts";
 import {{ markdownToHtml }} from "./renderer-vue/src/markdown.ts";
 const dataset = {dataset};
 const views = {views};
 const markdown = {markdown};
 console.log(JSON.stringify({{
   charts: views.map((view) => chartKindForView(view, dataset)),
+  orientations: views.map((view) => barOrientationForView(view, dataset)),
   markdown: markdown.map((sample) => markdownToHtml(sample)),
 }}));
 "#,
@@ -639,6 +697,7 @@ console.log(JSON.stringify({{
     );
     let vue: Value = serde_json::from_slice(&output.stdout)?;
     assert_eq!(vue["charts"], json!(rust_charts));
+    assert_eq!(vue["orientations"], json!(rust_orientations));
     assert_eq!(vue["markdown"], json!(rust_markdown));
     Ok(())
 }

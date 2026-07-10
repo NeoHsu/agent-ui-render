@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { Dataset } from "../types";
-import { cellValueClass, formatCell, tableCellClass } from "../format";
+import {
+  cellValueClass,
+  formatCell,
+  safeClass,
+  tableCellClass,
+} from "../format";
 
 const props = withDefaults(
   defineProps<{
@@ -26,7 +31,11 @@ const columnCount = computed(() => Math.max(props.dataset.columns.length, 1));
       </caption>
       <thead>
         <tr>
-          <th v-for="column in dataset.columns" :key="column.key">
+          <th
+            v-for="column in dataset.columns"
+            :key="column.key"
+            :class="`column-${safeClass(column.type ?? 'string')}`"
+          >
             {{ column.label || column.key }}
           </th>
         </tr>
@@ -42,7 +51,10 @@ const columnCount = computed(() => Math.max(props.dataset.columns.length, 1));
             <td
               v-for="(column, columnIndex) in dataset.columns"
               :key="column.key"
-              :class="tableCellClass(row[columnIndex] ?? null, column)"
+              :class="[
+                tableCellClass(row[columnIndex] ?? null, column),
+                `column-${safeClass(column.type ?? 'string')}`,
+              ]"
             >
               <span :class="cellValueClass(row[columnIndex] ?? null, column)">
                 {{ formatCell(row[columnIndex] ?? null, column) }}

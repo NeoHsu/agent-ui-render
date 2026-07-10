@@ -4,18 +4,20 @@ import type { Dataset, ViewIntent } from "../types";
 import {
   barChartModel,
   chartAriaLabel,
-  lineChartModel,
+  lineChartModels,
   pieChartModel,
   pieRadius,
   scatterChartModel,
   seriesColors,
+  verticalBarChartModel,
 } from "../chart-model";
-import { chartKindForView } from "../chart-selection";
+import { barOrientationForView, chartKindForView } from "../chart-selection";
 import DataTableBlock from "./DataTableBlock.vue";
 import BarChartView from "./charts/BarChartView.vue";
 import LineChartView from "./charts/LineChartView.vue";
 import PieChartView from "./charts/PieChartView.vue";
 import ScatterChartView from "./charts/ScatterChartView.vue";
+import VerticalBarChartView from "./charts/VerticalBarChartView.vue";
 
 const props = withDefaults(
   defineProps<{
@@ -31,18 +33,28 @@ const props = withDefaults(
 const chartColors = seriesColors;
 const chartLabel = computed(() => chartAriaLabel(props.view));
 const chartKind = computed(() => chartKindForView(props.view, props.dataset));
+const barOrientation = computed(() =>
+  chartKind.value === "bar"
+    ? barOrientationForView(props.view, props.dataset)
+    : "horizontal",
+);
 
-const lineSeries = computed(() =>
-  chartKind.value === "line" ? lineChartModel(props.dataset, props.view) : [],
+const lineModels = computed(() =>
+  chartKind.value === "line" ? lineChartModels(props.dataset, props.view) : [],
 );
 
 const scatterModel = computed(() =>
   chartKind.value === "scatter"
     ? scatterChartModel(props.dataset, props.view)
-    : { label: "", points: [] },
+    : {
+        label: "",
+        xLabel: "",
+        yLabel: "",
+        xTicks: [],
+        yTicks: [],
+        points: [],
+      },
 );
-const scatterPoints = computed(() => scatterModel.value.points);
-const scatterLabel = computed(() => scatterModel.value.label);
 
 const pieData = computed(() =>
   chartKind.value === "pie"
@@ -52,21 +64,41 @@ const pieData = computed(() =>
 const pieSlices = computed(() => pieData.value.slices);
 const pieTotalLabel = computed(() => pieData.value.totalLabel);
 
-const barItems = computed(() =>
-  chartKind.value === "bar" ? barChartModel(props.dataset, props.view) : [],
+const barModel = computed(() =>
+  chartKind.value === "bar" && barOrientation.value === "horizontal"
+    ? barChartModel(props.dataset, props.view)
+    : {
+        groups: [],
+        legend: [],
+        axisStart: "0",
+        axisEnd: "",
+        sharedScale: true,
+      },
+);
+
+const verticalBarModel = computed(() =>
+  chartKind.value === "bar" && barOrientation.value === "vertical"
+    ? verticalBarChartModel(props.dataset, props.view)
+    : { groups: [], legend: [], yTicks: [] },
 );
 </script>
 
 <template>
-  <LineChartView
-    v-if="chartKind === 'line' && lineSeries.length"
-    :series="lineSeries"
-    :chart-label="chartLabel"
-  />
+  <div
+    v-if="chartKind === 'line' && lineModels.length"
+    class="line-chart-grid"
+    :data-faceted="lineModels.length > 1"
+  >
+    <LineChartView
+      v-for="model in lineModels"
+      :key="model.key"
+      :model="model"
+      :chart-label="chartLabel"
+    />
+  </div>
   <ScatterChartView
-    v-else-if="scatterPoints.length"
-    :points="scatterPoints"
-    :label="scatterLabel"
+    v-else-if="scatterModel.points.length"
+    :model="scatterModel"
     :color="chartColors[0]"
     :chart-label="chartLabel"
   />
@@ -77,6 +109,11 @@ const barItems = computed(() =>
     :total-label="pieTotalLabel"
     :chart-label="chartLabel"
   />
-  <BarChartView v-else-if="barItems.length" :items="barItems" />
+  <VerticalBarChartView
+    v-else-if="verticalBarModel.groups.length"
+    :model="verticalBarModel"
+    :chart-label="chartLabel"
+  />
+  <BarChartView v-else-if="barModel.groups.length" :model="barModel" />
   <DataTableBlock v-else :dataset="dataset" :caption="fallbackCaption" />
 </template>

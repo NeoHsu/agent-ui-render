@@ -52,6 +52,19 @@ base_payload = {
                 ["Recovered", 42, 0.006, 210, 970],
             ],
         },
+        "financial_quarters": {
+            "columns": [
+                {"key": "quarter", "label": "Quarter", "type": "string"},
+                {"key": "revenue", "label": "Revenue", "type": "currency", "unit": "USD"},
+                {"key": "profit", "label": "Profit", "type": "currency", "unit": "USD"},
+            ],
+            "rows": [
+                ["Q1", 1030000, 260000],
+                ["Q2", 1140000, 310000],
+                ["Q3", 1210000, 340000],
+                ["Q4", 1340000, 370000],
+            ],
+        },
         "impact_mix": {
             "columns": [
                 {"key": "impact_area", "label": "Impact Area", "type": "string"},
@@ -129,7 +142,8 @@ base_payload = {
         {"intent": "trend", "data": "timeline", "x": "phase", "measures": ["error_rate", "p95_latency"], "priority": "high", "title": "Line Chart: Trend"},
         {"intent": "relationship", "data": "timeline", "x": "minute", "measures": ["p95_latency"], "priority": "medium", "title": "Scatter Chart: Relationship"},
         {"intent": "composition", "data": "impact_mix", "x": "impact_area", "measures": ["requests"], "priority": "high", "title": "Pie Chart: Composition"},
-        {"intent": "comparison", "data": "impact_mix", "x": "impact_area", "measures": ["requests"], "priority": "medium", "title": "Bar Chart: Comparison"},
+        {"intent": "comparison", "data": "financial_quarters", "x": "quarter", "measures": ["revenue", "profit"], "priority": "high", "title": "Vertical Grouped Bar: Period Comparison"},
+        {"intent": "comparison", "data": "impact_mix", "x": "impact_area", "measures": ["requests"], "priority": "medium", "title": "Horizontal Bar: Category Comparison"},
         {"intent": "distribution", "data": "impact_mix", "x": "impact_area", "measures": ["requests"], "priority": "low", "title": "Bar Chart: Distribution"},
         {"intent": "precise_records", "data": "evidence", "priority": "medium", "title": "Table: Status Badges"},
         {"intent": "precise_records", "data": "actions", "columns": ["action", "priority", "status"], "priority": "high", "title": "Table: Projected Columns"},
@@ -228,7 +242,7 @@ Coverage in every variant:
 - Metric formats: number, currency, percent, string, including metric delta labels.
 - Markdown syntax: headings, paragraph, blockquote, ordered/unordered lists, hr, fenced code, link, inline code, strong/emphasis.
 - Semantic tones: critical, error, warning, success, info, muted.
-- Charts: line, scatter, pie, bar comparison, bar distribution.
+- Charts: line, scatter, pie, vertical grouped bar, horizontal grouped bar, bar distribution.
 - Tables: full records/status badges, projected columns, empty state.
 - View priorities: high, medium, low.
 - Themes: report-light, technical-dark, executive-clean.
