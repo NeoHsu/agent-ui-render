@@ -33,8 +33,10 @@ Before authoring anything, locate the CLI and show the check's output:
 
 ```bash
 command -v agent-ui-render \
-  || ls "$(git rev-parse --show-toplevel)/target/release/agent-ui-render"
+  || ls ./target/release/agent-ui-render 2>/dev/null
 ```
+
+On Windows the binary name is `agent-ui-render.exe`.
 
 - Found on PATH: use `agent-ui-render` as written below.
 - Only the repo binary exists: substitute the repo binary path printed above
@@ -54,6 +56,9 @@ The tables in this file are a quick reference only. Full semantics live in:
 - `references/dataset.md` — dataset, column, and row rules, external refs,
   dictionary encoding, and view/column compatibility. Read it before shaping
   any dataset.
+- When unsure of the exact compact shape, run
+  `agent-ui-render schema print compact` — its output always matches the
+  installed binary and overrides any doc drift.
 
 ## Output modes
 
@@ -125,6 +130,29 @@ Use shared datasets under `d`; views reference datasets and columns by indexes.
 Do not output readable object-array rows, final chart specs, HTML, Vue, React,
 class names, style, arbitrary components, or action handlers.
 
+View tuples take indexes (never dataset ids): `["o", dataset]`,
+`["r", dataset, [columns]?]`, `["t", dataset, xColumn, [measureColumns]]`,
+`["b" | "p", dataset, dimension, [measures]]`,
+`["d", dataset, dimension, [measures]?]`, `["s", dataset, x, [measures]]`.
+
+Complete minimal payload — a dataset `[id, columns, rows]`, a trend view over
+column 1 by column 0, and a records table:
+
+```json
+{
+  "version": 1,
+  "t": "Revenue Overview",
+  "d": [
+    [
+      "sales",
+      [["month", "s"], ["revenue", "cur", "USD"], ["growth", "pct"]],
+      [["Jan", 120000, 0.05], ["Feb", 135000, 0.125], ["Mar", 150000, 0.111]]
+    ]
+  ],
+  "v": [["t", 0, 0, [1]], ["r", 0]]
+}
+```
+
 Beware: the letter `d` has three unrelated meanings depending on position —
 top-level key `d` (datasets), view code `d` (distribution), and column type
 code `d` (date). Always disambiguate by context.
@@ -168,10 +196,12 @@ c critical
 6. Validate:
 
    ```bash
-   agent-ui-render validate <input.json>
+   agent-ui-render validate --warnings-as-errors <input.json>
    ```
 
-   Fix warnings, not just errors — `--warnings-as-errors` is the quality bar.
+   On failure, fix the payload per the diagnostics and re-validate. Repair the
+   compact JSON as many rounds as needed; never fall back to hand-written
+   HTML/Vue/React.
 
 7. Render by default:
 
@@ -188,7 +218,7 @@ names, or `javascript:` URLs into payloads. Treat all strings as untrusted text.
 
 ## Self-check before final
 
-- `agent-ui-render validate` passed with zero errors, or the deliverable is
+- `agent-ui-render validate --warnings-as-errors` passed, or the deliverable is
   explicitly labeled `[UNVALIDATED]` because no binary was available.
 - Default preview mode returns the generated `.html` path.
 - Payload mode returns parseable JSON only, with validation evidence quoted.

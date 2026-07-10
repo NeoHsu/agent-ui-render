@@ -16,39 +16,6 @@ spec.
 - **Planner:** map normalized view intent to canonical UI spec blocks.
 - **Renderer:** render only validated normalized data.
 
-```text
-+------------------------------+
-| LLM-authored compact input   |
-| version: 1                   |
-+---------------+--------------+
-                |
-                v
-+------------------------------+
-| validate_report              |
-| structure, refs, safety      |
-+---------------+--------------+
-                |
-                v
-+------------------------------+
-| normalize_report             |
-| expand codes into domain     |
-+---------------+--------------+
-                |
-                v
-+------------------------------+
-| Normalized report            |
-| schema=ui.input.normalized   |
-+---------------+--------------+
-                |
-        +-------+-------+----------------+
-        |               |                |
-        v               v                v
-+---------------+ +-------------+ +----------------+
-| Render HTML   | | Plan ui.spec| | Product UI     |
-| preview       | | JSON        | | handoff        |
-+---------------+ +-------------+ +----------------+
-```
-
 ## Compact top-level schema
 
 ```ts
@@ -102,9 +69,8 @@ Column tuple shapes and type codes are defined in `references/dataset.md`
 (the home file — see its "Column tuples" section). Quick recall only:
 `[key, type, unit?, label?]`; type codes `s n cur pct d dt b dict:<id>`.
 
-Beware: the letter `d` has three unrelated meanings depending on position —
-top-level key `d` (datasets), view code `d` (distribution), and column type
-code `d` (date). Always disambiguate by context.
+The letter `d` is position-overloaded — see the warning in `SKILL.md` (the
+home copy) for its three unrelated meanings.
 
 ## Metrics
 
