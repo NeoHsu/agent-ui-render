@@ -157,8 +157,15 @@ c critical
    meaning.
 2. Put reusable tabular data under `d` with `[id, columns, rows]` by default.
 3. Add metrics in `m`, concise summary in `s`, and caveats in `a`.
-4. Select semantic view tuples such as `r`, `t`, `b`, `p`, `s`, or `d`.
-5. Validate:
+4. Choose a deliberate presentation profile unless the user or host already
+   specifies one: use `technical-dark` for incident, reliability, and
+   operational dashboards; `executive-clean` for finance and leadership briefs;
+   otherwise use `report-light`. Prefer `density: "compact"` for multi-view
+   dashboards and `comfortable` for narrative reports.
+5. Select semantic view tuples such as `r`, `t`, `b`, `p`, `s`, or `d`.
+   Use `b` for grouped period/category bars and `t` when continuity or rate of
+   change is the primary message.
+6. Validate:
 
    ```bash
    agent-ui-render validate <input.json>
@@ -166,7 +173,7 @@ c critical
 
    Fix warnings, not just errors — `--warnings-as-errors` is the quality bar.
 
-6. Render by default:
+7. Render by default:
 
    ```bash
    agent-ui-render render html <input.json> <output.html>

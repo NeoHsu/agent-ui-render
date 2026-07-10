@@ -161,13 +161,18 @@ Code mapping:
 | `o`  | overview             | text/summary intent     |
 | `r`  | records              | table                   |
 | `t`  | trend                | line chart              |
-| `b`  | comparison           | bar chart               |
+| `b`  | comparison           | grouped bar chart       |
 | `d`  | distribution         | bar chart               |
 | `p`  | composition          | pie when safe, else bar |
 | `s`  | relationship         | scatter chart           |
 
 For `r`, omit `columns` to show every column, or pass column indexes to render a
 compact projected table such as `["r", 0, [0, 2]]`.
+
+For `b`, the renderer chooses a vertical grouped chart for two to eight ordered
+time categories (dates, quarters, months, weeks, or years) with compatible
+measures. Other comparisons use horizontal grouped bars with a shared axis when
+units are compatible. Use `t` when continuity and rate of change are primary.
 
 For `s`, `x` and at least one measure must be numeric-compatible and distinct.
 
