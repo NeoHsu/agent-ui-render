@@ -1,0 +1,10 @@
+{
+  "name": "agent-ui-renderer-handoff",
+  "private": true,
+  "type": "module",
+  "peerDependencies": {
+    "vega": "^6.2.0",
+    "vega-lite": "^6.4.3",
+    "vue": "^3.5.17"
+  }
+}

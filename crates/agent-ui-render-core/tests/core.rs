@@ -8,7 +8,7 @@ use agent_ui_render_core::{
     normalize_report, plan_ui_spec,
     render::{render_static_html_with_theme_tokens, render_theme_token_css},
     render_static_html, render_vue_html_shell, validate_report, validate_report_with_options,
-    wire::compact,
+    wire::{compact, v2},
 };
 use serde_json::{Value, json};
 
@@ -39,6 +39,10 @@ const COMPACT_SCHEMA: &str = include_str!("../../../schemas/v1/compact.schema.js
 const NORMALIZED_SCHEMA: &str = include_str!("../../../schemas/v1/normalized.schema.json");
 const SPEC_SCHEMA: &str = include_str!("../../../schemas/v1/spec.schema.json");
 const CONFIG_SCHEMA: &str = include_str!("../../../schemas/config.schema.json");
+const COMPACT_V2_SCHEMA: &str = include_str!("../../../schemas/v2/compact.schema.json");
+const NORMALIZED_V2_SCHEMA: &str = include_str!("../../../schemas/v2/normalized.schema.json");
+const SPEC_V2_SCHEMA: &str = include_str!("../../../schemas/v2/spec.schema.json");
+const V2_SHOWCASE: &str = include_str!("../../../examples/v2-chart-showcase.input.json");
 
 #[test]
 fn validates_and_normalizes_revenue_overview() -> Result<(), Box<dyn Error>> {
@@ -172,6 +176,125 @@ fn examples_pass_rust_validator_json_schemas_plan_and_render() -> Result<(), Box
 }
 
 #[test]
+fn compact_v2_covers_non_geo_non_image_chart_families() -> Result<(), Box<dyn Error>> {
+    let compact_validator = schema_validator(COMPACT_V2_SCHEMA)?;
+    let normalized_validator = schema_validator(NORMALIZED_V2_SCHEMA)?;
+    let spec_validator = schema_validator(SPEC_V2_SCHEMA)?;
+    let payload: Value = serde_json::from_str(V2_SHOWCASE)?;
+
+    let validation = validate_report(&payload);
+    assert!(validation.errors.is_empty(), "{:#?}", validation.errors);
+    assert_schema_valid(&compact_validator, "v2 showcase", &payload);
+
+    let normalized = normalize_report(&payload)?.input;
+    assert_eq!(normalized.version, domain::FORMAT_VERSION_V2);
+    assert_eq!(normalized.views.len(), 45);
+    assert!(
+        normalized
+            .views
+            .iter()
+            .filter(|view| view.intent == domain::VIEW_INTENT_CHART)
+            .all(|view| view.spec.is_some() && view.chart.is_some())
+    );
+    let normalized_value = serde_json::to_value(&normalized)?;
+    assert_schema_valid(
+        &normalized_validator,
+        "normalized v2 showcase",
+        &normalized_value,
+    );
+
+    let interactions = [
+        (0, "agent_hover"),
+        (4, "agent_select"),
+        (10, "agent_legend"),
+        (42, "agent_brush"),
+        (43, "agent_zoom"),
+    ];
+    for (index, name) in interactions {
+        let chart_spec = normalized.views[index]
+            .spec
+            .as_ref()
+            .ok_or_else(|| io::Error::other("showcase chart should have a Vega-Lite spec"))?;
+        assert_eq!(chart_spec["params"][0]["name"], name);
+        if name != "agent_zoom" {
+            assert_eq!(
+                chart_spec["encoding"]["opacity"]["condition"]["param"],
+                name
+            );
+            assert_eq!(chart_spec["encoding"]["opacity"]["value"], 0.22);
+        }
+    }
+    assert_eq!(
+        normalized.views[10]
+            .spec
+            .as_ref()
+            .ok_or_else(|| io::Error::other("density chart should have a Vega-Lite spec"))?["params"]
+            [0]["select"]["fields"][0],
+        "group"
+    );
+
+    let spec = plan_ui_spec(&normalized);
+    assert_eq!(spec["version"], domain::FORMAT_VERSION_V2);
+    assert_schema_valid(&spec_validator, "v2 planned spec", &spec);
+    assert!(render_vue_html_shell(&normalized).contains("vega-chart"));
+    assert!(render_static_html(&normalized).contains("Interactive line chart"));
+
+    let compact_schema: Value = serde_json::from_str(COMPACT_V2_SCHEMA)?;
+    assert_eq!(
+        strings_at(&compact_schema, "/$defs/chartCode/enum"),
+        v2::CHART_CODES
+    );
+    assert!(!v2::CHART_CODES.contains(&"image"));
+    assert!(!v2::CHART_CODES.contains(&"geoshape"));
+
+    let compile_script = format!(
+        r#"
+import {{ compile }} from "vega-lite";
+const report = {report};
+const charts = report.views.filter((view) => view.intent === "chart");
+for (const chart of charts) compile(chart.spec);
+console.log(charts.length);
+"#,
+        report = serde_json::to_string(&normalized)?,
+    );
+    let output = Command::new("bun")
+        .arg("--eval")
+        .arg(compile_script)
+        .current_dir(workspace_root()?)
+        .output()?;
+    assert!(
+        output.status.success(),
+        "Vega-Lite compile smoke failed\nstdout:\n{}\nstderr:\n{}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(String::from_utf8_lossy(&output.stdout).trim(), "44");
+    Ok(())
+}
+
+#[test]
+fn compact_v2_rejects_excluded_and_raw_vega_capabilities() {
+    for code in ["image", "isotype", "map", "geoshape"] {
+        let payload = json!({
+            "version": 2,
+            "d": [["data", [["x", "n"]], [[1]]]],
+            "v": [[code, 0, 0]]
+        });
+        let validation = validate_report(&payload);
+        assert!(
+            !validation.errors.is_empty(),
+            "excluded code {code} was accepted"
+        );
+    }
+    let payload = json!({
+        "version": 2,
+        "d": [["data", [["x", "n"]], [[1]]]],
+        "v": [["ln", 0, 0, [0], {"mark": "image"}]]
+    });
+    assert!(!validate_report(&payload).errors.is_empty());
+}
+
+#[test]
 fn schema_enums_match_centralized_code_mappings() -> Result<(), Box<dyn Error>> {
     let compact_schema: Value = serde_json::from_str(COMPACT_SCHEMA)?;
     assert_eq!(
@@ -225,7 +348,7 @@ fn schema_enums_match_centralized_code_mappings() -> Result<(), Box<dyn Error>> 
             &normalized_schema,
             "/$defs/viewIntent/properties/intent/enum"
         ),
-        domain::VIEW_INTENTS
+        domain::VIEW_INTENTS_V1
     );
     assert_eq!(
         strings_at(&normalized_schema, "/$defs/alert/properties/level/enum"),

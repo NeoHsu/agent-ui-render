@@ -1189,6 +1189,150 @@ body.agent-ui-standalone[data-theme="executive-clean"] {
 	}
 }
 
+.agent-ui-render .vega-chart-shell {
+	position: relative;
+	width: 100%;
+	min-width: 0;
+}
+
+.agent-ui-render .chart-interaction-bar {
+	min-height: 30px;
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 10px;
+	margin-bottom: 4px;
+}
+
+.agent-ui-render .chart-interaction-hint {
+	color: var(--agent-muted);
+	font-size: 0.78rem;
+}
+
+.agent-ui-render .chart-reset-button {
+	appearance: none;
+	border: 1px solid var(--agent-border);
+	border-radius: 999px;
+	background: var(--agent-surface-muted);
+	color: var(--agent-text);
+	padding: 4px 10px;
+	font: inherit;
+	font-size: 0.75rem;
+	cursor: pointer;
+	transition:
+		border-color 140ms ease,
+		background-color 140ms ease,
+		transform 140ms ease;
+}
+
+.agent-ui-render .chart-reset-button:hover,
+.agent-ui-render .chart-reset-button:focus-visible {
+	border-color: var(--agent-primary);
+	background: var(--agent-surface-strong);
+	transform: translateY(-1px);
+	outline: none;
+}
+
+.agent-ui-render .vega-chart {
+	width: 100%;
+	min-height: 320px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	overflow-x: auto;
+	outline: none;
+}
+
+.agent-ui-render .vega-chart:focus-visible {
+	border-radius: 10px;
+	box-shadow: 0 0 0 2px var(--agent-primary);
+}
+
+.agent-ui-render .vega-chart-shell[data-interaction="brush"] .vega-chart {
+	cursor: crosshair;
+}
+
+.agent-ui-render .vega-chart-shell[data-interaction="zoom"] .vega-chart {
+	cursor: grab;
+}
+
+.agent-ui-render .vega-chart-shell[data-interaction="zoom"] .vega-chart:active {
+	cursor: grabbing;
+}
+
+.agent-ui-render .vega-chart > svg {
+	max-width: 100%;
+	height: auto;
+}
+
+.agent-ui-render .vega-chart g.role-mark > [role="graphics-symbol"],
+.agent-ui-render .vega-chart g.role-legend-symbol > [role="graphics-symbol"] {
+	cursor: pointer;
+	pointer-events: all;
+	transition:
+		opacity 140ms ease,
+		filter 140ms ease;
+}
+
+.agent-ui-render .vega-chart g.role-mark > [role="graphics-symbol"]:hover,
+.agent-ui-render .vega-chart g.role-mark > [role="graphics-symbol"]:focus,
+.agent-ui-render
+	.vega-chart
+	g.role-legend-symbol
+	> [role="graphics-symbol"]:hover,
+.agent-ui-render
+	.vega-chart
+	g.role-legend-symbol
+	> [role="graphics-symbol"]:focus {
+	opacity: 1 !important;
+	filter: brightness(1.08) drop-shadow(0 2px 3px rgb(15 23 42 / 24%));
+	outline: none;
+}
+
+.agent-ui-render .chart-tooltip {
+	position: absolute;
+	z-index: 30;
+	width: max-content;
+	max-width: min(260px, calc(100% - 24px));
+	display: grid;
+	gap: 5px;
+	padding: 10px 12px;
+	border: 1px solid var(--agent-border);
+	border-radius: 10px;
+	background: var(--agent-surface-strong);
+	color: var(--agent-text);
+	box-shadow: 0 10px 24px rgb(15 23 42 / 20%);
+	font-size: 0.78rem;
+	line-height: 1.35;
+	pointer-events: none;
+	transform: translateY(-4px);
+}
+
+.agent-ui-render .chart-tooltip-row {
+	display: grid;
+	grid-template-columns: minmax(64px, auto) minmax(0, 1fr);
+	gap: 10px;
+}
+
+.agent-ui-render .chart-tooltip-label {
+	color: var(--agent-muted);
+}
+
+.agent-ui-render .chart-tooltip-value {
+	min-width: 0;
+	text-align: right;
+	overflow-wrap: anywhere;
+}
+
+.agent-ui-render .chart-render-error {
+	margin-top: 0.75rem;
+}
+
+.agent-ui-render .chart-static-note {
+	color: var(--agent-muted);
+	font-size: 0.9rem;
+}
+
 @media print {
 	body.agent-ui-standalone {
 		background: white;
@@ -1208,6 +1352,11 @@ body.agent-ui-standalone[data-theme="executive-clean"] {
 	.agent-ui-render .alert {
 		box-shadow: none;
 		break-inside: avoid;
+	}
+
+	.agent-ui-render .chart-interaction-bar,
+	.agent-ui-render .chart-tooltip {
+		display: none;
 	}
 }
 

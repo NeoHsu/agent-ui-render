@@ -5,6 +5,7 @@ import type {
   UIDensity,
   Report,
   UITheme,
+  ViewIntent,
 } from "./types";
 import AlertList from "./components/AlertList.vue";
 import AssumptionList from "./components/AssumptionList.vue";
@@ -39,6 +40,7 @@ const metrics = computed(() => props.input.metrics ?? []);
 const insights = computed(() => props.input.insights ?? []);
 const markdownSections = computed(() => props.input.markdown ?? []);
 const views = computed(() => props.input.views ?? []);
+const datasets = computed(() => props.input.datasets ?? {});
 const orderedViews = computed(() => [
   ...views.value.filter((view) => view.intent !== "precise_records"),
   ...views.value.filter((view) => view.intent === "precise_records"),
@@ -51,6 +53,27 @@ const useSplitChartLayout = computed(
     chartViews.value.length > 1 &&
     !chartViews.value.some((view) => view.intent === "trend"),
 );
+const fullWidthChartTypes = new Set([
+  "gantt",
+  "bullet",
+  "parallel-coordinates",
+  "candlestick",
+  "errorband",
+  "trail",
+  "layer",
+  "facet",
+  "concat",
+  "repeat",
+]);
+
+function layoutForView(view: ViewIntent): "full" | "half" {
+  if (view.intent === "precise_records") return "full";
+  if (view.intent === "chart" && fullWidthChartTypes.has(view.chart ?? "")) {
+    return "full";
+  }
+  return useSplitChartLayout.value ? "half" : "full";
+}
+
 const assumptions = computed(() => props.input.assumptions ?? []);
 </script>
 
@@ -78,13 +101,10 @@ const assumptions = computed(() => props.input.assumptions ?? []);
         v-for="(view, index) in orderedViews"
         :key="`${view.data}-${view.intent}-${index}`"
         :view="view"
-        :dataset="input.datasets?.[view.data]"
+        :dataset="datasets[view.data]"
+        :datasets="datasets"
         :index="index"
-        :layout="
-          view.intent !== 'precise_records' && useSplitChartLayout
-            ? 'half'
-            : 'full'
-        "
+        :layout="layoutForView(view)"
       />
     </div>
 

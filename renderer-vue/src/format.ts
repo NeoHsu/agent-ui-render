@@ -296,6 +296,7 @@ const viewTitleBuilders: Record<
 		measures && x ? `${measures} Composition by ${x}` : `${data} Composition`,
 	relationship: ({ data, x, measures }) =>
 		measures && x ? `${measures} vs. ${x}` : `${data} Relationship`,
+	chart: ({ data }) => `${data} Chart`,
 };
 
 export function viewTitle(

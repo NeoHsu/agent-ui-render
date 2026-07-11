@@ -48,6 +48,8 @@ export type MarkdownSection = {
 	content: string;
 };
 
+export type VegaLiteSpec = Record<string, unknown>;
+
 export type ViewIntent = {
 	intent:
 		| "overview"
@@ -56,7 +58,8 @@ export type ViewIntent = {
 		| "comparison"
 		| "distribution"
 		| "composition"
-		| "relationship";
+		| "relationship"
+		| "chart";
 	data: string;
 	x?: string;
 	measures?: string[];
@@ -64,11 +67,14 @@ export type ViewIntent = {
 	columns?: string[];
 	priority?: "high" | "medium" | "low";
 	title?: string;
+	chart?: string;
+	datasets?: string[];
+	spec?: VegaLiteSpec;
 };
 
 export type Report = {
 	schema: "ui.input.normalized";
-	version: 1;
+	version: 1 | 2;
 	title?: string;
 	summary?: string;
 	theme?: UITheme;
