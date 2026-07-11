@@ -65,8 +65,9 @@ fn validate_compact_report(value: &Value, limits: &Limits) -> ValidationReport {
 
     validate_unknown_fields("$", object, compact::TOP_LEVEL_KEYS, &mut report);
 
-    if object.get("version").and_then(Value::as_u64) != Some(compact::VERSION) {
-        report.error("$.version", "field 'version' must be exactly 1");
+    let version = object.get("version").and_then(Value::as_u64);
+    if !matches!(version, Some(compact::VERSION | crate::wire::v2::VERSION)) {
+        report.error("$.version", "field 'version' must be exactly 1 or 2");
     }
 
     for key in ["t", "s"] {
@@ -93,7 +94,13 @@ fn validate_compact_report(value: &Value, limits: &Limits) -> ValidationReport {
     let datasets = validate_compact_datasets(object.get("d"), &dictionaries, limits, &mut report);
 
     validate_compact_metrics(object.get("m"), limits, &mut report);
-    validate_compact_views(object.get("v"), &datasets, limits, &mut report);
+    validate_compact_views(
+        object.get("v"),
+        version.unwrap_or(compact::VERSION),
+        &datasets,
+        limits,
+        &mut report,
+    );
     validate_compact_alerts(object.get("a"), limits, &mut report);
     validate_compact_markdown(object.get("md"), limits, &mut report);
 
@@ -160,8 +167,13 @@ pub fn validate_normalized_report_with_options(
             "field 'schema' must be exactly 'ui.input.normalized'",
         );
     }
-    if object.get("version").and_then(Value::as_u64) != Some(u64::from(domain::FORMAT_VERSION)) {
-        report.error("$.version", "field 'version' must be exactly 1");
+    let version = object.get("version").and_then(Value::as_u64);
+    if !matches!(
+        version,
+        Some(version) if version == u64::from(domain::FORMAT_VERSION)
+            || version == u64::from(domain::FORMAT_VERSION_V2)
+    ) {
+        report.error("$.version", "field 'version' must be exactly 1 or 2");
     }
 
     for key in ["title", "summary"] {
@@ -223,7 +235,13 @@ pub fn validate_normalized_report_with_options(
         limits,
         &mut report,
     );
-    validate_normalized_views(object.get("views"), &datasets_info, limits, &mut report);
+    validate_normalized_views(
+        object.get("views"),
+        version.unwrap_or(u64::from(domain::FORMAT_VERSION)),
+        &datasets_info,
+        limits,
+        &mut report,
+    );
     validate_normalized_alerts(object.get("alerts"), limits, &mut report);
 
     for path in collect_unsafe_string_paths(value) {
@@ -869,6 +887,7 @@ fn validate_compact_metrics(value: Option<&Value>, limits: &Limits, report: &mut
 
 fn validate_compact_views(
     value: Option<&Value>,
+    version: u64,
     datasets: &[DatasetInfo],
     limits: &Limits,
     report: &mut ValidationReport,
@@ -882,7 +901,44 @@ fn validate_compact_views(
     };
     validate_count(views.len(), limits.max_views, "$.v", "views", report);
     for (index, view) in views.iter().enumerate() {
-        validate_compact_view(view, index, datasets, limits, report);
+        let code = view
+            .as_array()
+            .and_then(|tuple| tuple.first())
+            .and_then(Value::as_str);
+        if version == crate::wire::v2::VERSION
+            && code.is_some_and(|item| !compact::is_view_code(item))
+        {
+            validate_compact_v2_view(view, index, datasets, report);
+        } else {
+            validate_compact_view(view, index, datasets, limits, report);
+        }
+    }
+}
+
+fn validate_compact_v2_view(
+    view: &Value,
+    index: usize,
+    datasets: &[DatasetInfo],
+    report: &mut ValidationReport,
+) {
+    let metas = datasets
+        .iter()
+        .enumerate()
+        .map(|(dataset_index, dataset)| crate::wire::v2::DatasetMeta {
+            id: format!("dataset_{dataset_index}"),
+            columns: dataset
+                .columns
+                .iter()
+                .map(|column| crate::wire::v2::ColumnMeta {
+                    key: column.key.clone(),
+                    type_code: column.type_code.clone(),
+                })
+                .collect(),
+            materialized: dataset.materialized,
+        })
+        .collect::<Vec<_>>();
+    if let Err(message) = crate::wire::v2::normalize_view(view, index, &metas) {
+        report.error(format!("$.v[{index}]"), message);
     }
 }
 
@@ -1527,6 +1583,7 @@ fn validate_normalized_markdown(
 
 fn validate_normalized_views(
     value: Option<&Value>,
+    version: u64,
     datasets: &BTreeMap<String, DatasetInfo>,
     limits: &Limits,
     report: &mut ValidationReport,
@@ -1540,13 +1597,14 @@ fn validate_normalized_views(
     };
     validate_count(views.len(), limits.max_views, "$.views", "views", report);
     for (index, view) in views.iter().enumerate() {
-        validate_normalized_view(view, index, datasets, limits, report);
+        validate_normalized_view(view, index, version, datasets, limits, report);
     }
 }
 
 fn validate_normalized_view(
     view: &Value,
     index: usize,
+    version: u64,
     datasets: &BTreeMap<String, DatasetInfo>,
     limits: &Limits,
     report: &mut ValidationReport,
@@ -1568,6 +1626,9 @@ fn validate_normalized_view(
             "columns",
             "priority",
             "title",
+            "chart",
+            "datasets",
+            "spec",
         ],
         report,
     );
@@ -1587,6 +1648,10 @@ fn validate_normalized_view(
             format!("{path}.intent"),
             format!("unsupported view intent '{intent}'"),
         );
+        return;
+    }
+    if intent == domain::VIEW_INTENT_CHART {
+        validate_normalized_chart_view(object, &path, version, datasets, limits, report);
         return;
     }
     let Some(data_id) = object.get("data").and_then(Value::as_str) else {
@@ -1691,6 +1756,111 @@ fn validate_normalized_view(
                 );
             }
         }
+    }
+}
+
+fn validate_normalized_chart_view(
+    object: &Map<String, Value>,
+    path: &str,
+    version: u64,
+    datasets: &BTreeMap<String, DatasetInfo>,
+    limits: &Limits,
+    report: &mut ValidationReport,
+) {
+    if version != u64::from(domain::FORMAT_VERSION_V2) {
+        report.error(
+            format!("{path}.intent"),
+            "explicit chart views require normalized input version 2",
+        );
+    }
+    let Some(data_id) = object.get("data").and_then(Value::as_str) else {
+        report.error(format!("{path}.data"), "chart data must be a string");
+        return;
+    };
+    validate_string_length(
+        data_id,
+        &format!("{path}.data"),
+        limits.max_string_chars,
+        "chart data",
+        report,
+    );
+    if !datasets.contains_key(data_id) {
+        report.error(
+            format!("{path}.data"),
+            format!("chart references missing dataset '{data_id}'"),
+        );
+    }
+    let Some(chart) = object.get("chart").and_then(Value::as_str) else {
+        report.error(format!("{path}.chart"), "chart type must be a string");
+        return;
+    };
+    if !crate::wire::v2::NORMALIZED_CHARTS.contains(&chart) {
+        report.error(
+            format!("{path}.chart"),
+            format!("unsupported normalized chart type '{chart}'"),
+        );
+    }
+    let Some(dataset_refs) = object.get("datasets").and_then(Value::as_array) else {
+        report.error(
+            format!("{path}.datasets"),
+            "chart datasets must be a non-empty array",
+        );
+        return;
+    };
+    if dataset_refs.is_empty() {
+        report.error(
+            format!("{path}.datasets"),
+            "chart datasets must not be empty",
+        );
+    }
+    for (index, dataset_ref) in dataset_refs.iter().enumerate() {
+        let reference_path = format!("{path}.datasets[{index}]");
+        let Some(reference) = dataset_ref.as_str() else {
+            report.error(reference_path, "chart dataset reference must be a string");
+            continue;
+        };
+        if !datasets.contains_key(reference) {
+            report.error(
+                reference_path,
+                format!("chart references missing dataset '{reference}'"),
+            );
+        }
+    }
+    let Some(spec) = object.get("spec").and_then(Value::as_object) else {
+        report.error(format!("{path}.spec"), "chart spec must be an object");
+        return;
+    };
+    if spec.get("$schema").and_then(Value::as_str) != Some(crate::wire::v2::VEGA_LITE_SCHEMA) {
+        report.error(
+            format!("{path}.spec.$schema"),
+            "chart spec must use the bundled Vega-Lite schema version",
+        );
+    }
+    if contains_prohibited_vega_key(&Value::Object(spec.clone())) {
+        report.error(
+            format!("{path}.spec"),
+            "chart spec contains a prohibited URL, href, image, or geoshape capability",
+        );
+    }
+}
+
+fn contains_prohibited_vega_key(value: &Value) -> bool {
+    match value {
+        Value::Object(object) => object.iter().any(|(key, value)| {
+            matches!(key.as_str(), "url" | "href")
+                || (key == "mark"
+                    && match value {
+                        Value::String(mark) => matches!(mark.as_str(), "image" | "geoshape"),
+                        Value::Object(mark) => mark
+                            .get("type")
+                            .and_then(Value::as_str)
+                            .is_some_and(|mark| matches!(mark, "image" | "geoshape")),
+                        _ => false,
+                    })
+                || contains_prohibited_vega_key(value)
+        }),
+        Value::Array(items) => items.iter().any(contains_prohibited_vega_key),
+        _ => false,
     }
 }
 

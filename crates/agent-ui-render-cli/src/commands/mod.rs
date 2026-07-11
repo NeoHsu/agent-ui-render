@@ -27,8 +27,11 @@ use crate::{
 };
 
 const COMPACT_SCHEMA: &str = include_str!("../../../../schemas/v1/compact.schema.json");
+const COMPACT_V2_SCHEMA: &str = include_str!("../../../../schemas/v2/compact.schema.json");
 const NORMALIZED_SCHEMA: &str = include_str!("../../../../schemas/v1/normalized.schema.json");
+const NORMALIZED_V2_SCHEMA: &str = include_str!("../../../../schemas/v2/normalized.schema.json");
 const SPEC_SCHEMA: &str = include_str!("../../../../schemas/v1/spec.schema.json");
+const SPEC_V2_SCHEMA: &str = include_str!("../../../../schemas/v2/spec.schema.json");
 const CONFIG_SCHEMA: &str = include_str!("../../../../schemas/config.schema.json");
 
 pub fn validate(command: &InputCommand, global: &GlobalArgs) -> anyhow::Result<()> {
@@ -140,8 +143,11 @@ pub fn schema(command: &SchemaCommand, global: &GlobalArgs) -> anyhow::Result<()
         SchemaAction::Print { schema } => {
             let source = match schema {
                 SchemaName::Compact => COMPACT_SCHEMA,
+                SchemaName::CompactV2 => COMPACT_V2_SCHEMA,
                 SchemaName::Normalized => NORMALIZED_SCHEMA,
+                SchemaName::NormalizedV2 => NORMALIZED_V2_SCHEMA,
                 SchemaName::Spec => SPEC_SCHEMA,
+                SchemaName::SpecV2 => SPEC_V2_SCHEMA,
                 SchemaName::Config => CONFIG_SCHEMA,
             };
             if global.pretty {

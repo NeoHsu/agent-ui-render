@@ -6,6 +6,7 @@ use serde_json::Value;
 pub const NORMALIZED_SCHEMA: &str = "ui.input.normalized";
 pub const SPEC_SCHEMA: &str = "ui.spec";
 pub const FORMAT_VERSION: u32 = 1;
+pub const FORMAT_VERSION_V2: u32 = 2;
 
 pub const THEME_REPORT_LIGHT: &str = "report-light";
 pub const THEME_TECHNICAL_DARK: &str = "technical-dark";
@@ -55,6 +56,16 @@ pub const VIEW_INTENT_COMPARISON: &str = "comparison";
 pub const VIEW_INTENT_DISTRIBUTION: &str = "distribution";
 pub const VIEW_INTENT_COMPOSITION: &str = "composition";
 pub const VIEW_INTENT_RELATIONSHIP: &str = "relationship";
+pub const VIEW_INTENT_CHART: &str = "chart";
+pub const VIEW_INTENTS_V1: &[&str] = &[
+    VIEW_INTENT_OVERVIEW,
+    VIEW_INTENT_PRECISE_RECORDS,
+    VIEW_INTENT_TREND,
+    VIEW_INTENT_COMPARISON,
+    VIEW_INTENT_DISTRIBUTION,
+    VIEW_INTENT_COMPOSITION,
+    VIEW_INTENT_RELATIONSHIP,
+];
 pub const VIEW_INTENTS: &[&str] = &[
     VIEW_INTENT_OVERVIEW,
     VIEW_INTENT_PRECISE_RECORDS,
@@ -63,6 +74,7 @@ pub const VIEW_INTENTS: &[&str] = &[
     VIEW_INTENT_DISTRIBUTION,
     VIEW_INTENT_COMPOSITION,
     VIEW_INTENT_RELATIONSHIP,
+    VIEW_INTENT_CHART,
 ];
 
 pub const ALERT_LEVEL_INFO: &str = "info";
@@ -138,6 +150,12 @@ pub struct ViewIntent {
     pub priority: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub chart: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub datasets: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub spec: Option<Value>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

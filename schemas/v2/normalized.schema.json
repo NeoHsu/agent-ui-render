@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/agent-ui/v2/normalized.schema.json",
+  "title": "NormalizedReportV2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "version"],
+  "properties": {
+    "schema": { "const": "ui.input.normalized" },
+    "version": { "const": 2 },
+    "title": { "type": "string" },
+    "summary": { "type": "string" },
+    "theme": { "enum": ["report-light", "technical-dark", "executive-clean"] },
+    "density": { "enum": ["comfortable", "compact"] },
+    "emphasis": { "enum": ["strong", "subtle"] },
+    "datasets": { "type": "object", "additionalProperties": { "$ref": "#/$defs/dataset" } },
+    "metrics": { "type": "array", "items": { "$ref": "#/$defs/metric" } },
+    "insights": { "type": "array", "items": { "type": "string" } },
+    "markdown": { "type": "array", "items": { "$ref": "#/$defs/markdownSection" } },
+    "views": { "type": "array", "items": { "$ref": "#/$defs/view" } },
+    "alerts": { "type": "array", "items": { "$ref": "#/$defs/alert" } },
+    "assumptions": { "type": "array", "items": { "type": "string" } }
+  },
+  "$defs": {
+    "primitive": { "type": ["string", "number", "boolean", "null"] },
+    "columnType": { "enum": ["string", "number", "currency", "percent", "date", "datetime", "boolean"] },
+    "dataset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["columns", "rows"],
+      "properties": {
+        "columns": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/column" } },
+        "rows": { "type": "array", "items": { "type": "array", "items": { "$ref": "#/$defs/primitive" } } }
+      }
+    },
+    "column": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key"],
+      "properties": {
+        "key": { "type": "string", "minLength": 1 },
+        "label": { "type": "string" },
+        "type": { "$ref": "#/$defs/columnType" },
+        "unit": { "type": "string" },
+        "description": { "type": "string" }
+      }
+    },
+    "metric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["label", "value"],
+      "properties": {
+        "label": { "type": "string", "minLength": 1 },
+        "value": { "$ref": "#/$defs/primitive" },
+        "format": { "enum": ["number", "currency", "percent", "string"] },
+        "unit": { "type": "string" },
+        "delta": { "$ref": "#/$defs/metricDelta" }
+      }
+    },
+    "metricDelta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value"],
+      "properties": {
+        "value": { "type": "number" },
+        "format": { "enum": ["number", "percent"] },
+        "direction": { "enum": ["up", "down", "flat"] },
+        "label": { "type": "string" }
+      }
+    },
+    "legacyView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["intent", "data"],
+      "properties": {
+        "intent": { "enum": ["overview", "precise_records", "trend", "comparison", "distribution", "composition", "relationship"] },
+        "data": { "type": "string", "minLength": 1 },
+        "x": { "type": "string", "minLength": 1 },
+        "measures": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "dimensions": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "columns": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+        "priority": { "enum": ["high", "medium", "low"] },
+        "title": { "type": "string" }
+      }
+    },
+    "chartView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["intent", "data", "chart", "datasets", "spec"],
+      "properties": {
+        "intent": { "const": "chart" },
+        "data": { "type": "string", "minLength": 1 },
+        "title": { "type": "string" },
+        "chart": {
+          "enum": [
+            "line", "area", "trail", "regression", "bar", "gantt", "waterfall", "bullet",
+            "ranged-dot", "histogram", "density", "dot", "boxplot", "qq", "scatter",
+            "parallel-coordinates", "ternary", "heatmap", "mosaic", "pie", "donut", "radial",
+            "errorbar", "errorband", "candlestick", "text", "tick", "rule", "layer", "facet",
+            "concat", "repeat"
+          ]
+        },
+        "datasets": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+        "spec": { "type": "object" }
+      }
+    },
+    "view": { "oneOf": [{ "$ref": "#/$defs/legacyView" }, { "$ref": "#/$defs/chartView" }] },
+    "alert": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["level", "content"],
+      "properties": {
+        "level": { "enum": ["info", "success", "warning", "error", "critical"] },
+        "title": { "type": "string" },
+        "content": { "type": "string", "minLength": 1 }
+      }
+    },
+    "markdownSection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["content"],
+      "properties": { "title": { "type": "string" }, "content": { "type": "string", "minLength": 1 } }
+    }
+  }
+}

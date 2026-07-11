@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/agent-ui/v2/spec.schema.json",
+  "title": "UiSpecV2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "version", "blocks"],
+  "properties": {
+    "schema": { "const": "ui.spec" },
+    "version": { "const": 2 },
+    "title": { "type": "string" },
+    "summary": { "type": "string" },
+    "theme": { "enum": ["report-light", "technical-dark", "executive-clean"] },
+    "density": { "enum": ["comfortable", "compact"] },
+    "emphasis": { "enum": ["strong", "subtle"] },
+    "datasets": { "type": "object" },
+    "blocks": { "type": "array", "items": { "$ref": "#/$defs/block" } }
+  },
+  "$defs": {
+    "block": {
+      "type": "object",
+      "required": ["id", "type"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "type": { "enum": ["text", "markdown", "metric", "table", "chart", "alert"] },
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "label": { "type": "string" },
+        "value": {},
+        "format": { "type": "string" },
+        "unit": { "type": "string" },
+        "delta": { "type": "object" },
+        "variant": { "type": "string" },
+        "level": { "type": "string" },
+        "data": { "type": "string" },
+        "columns": { "type": "array", "items": { "type": "string" } },
+        "sort": { "type": "object" },
+        "chart": { "type": "string" },
+        "orientation": { "type": "string" },
+        "x": { "type": "string" },
+        "y": { "type": "array", "items": { "type": "string" } },
+        "datasets": { "type": "array", "items": { "type": "string" } },
+        "spec": { "type": "object" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

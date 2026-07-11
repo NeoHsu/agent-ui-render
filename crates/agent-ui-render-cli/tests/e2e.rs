@@ -167,7 +167,15 @@ fn max_input_bytes_is_enforced_before_parse() -> Result<(), Box<dyn std::error::
 
 #[test]
 fn schema_print_outputs_valid_json() -> Result<(), Box<dyn std::error::Error>> {
-    for schema in ["compact", "normalized", "spec", "config"] {
+    for schema in [
+        "compact",
+        "compact-v2",
+        "normalized",
+        "normalized-v2",
+        "spec",
+        "spec-v2",
+        "config",
+    ] {
         let output = Command::new(env!("CARGO_BIN_EXE_agent-ui-render"))
             .args(["schema", "print", schema])
             .output()?;

@@ -118,7 +118,10 @@ pub enum SchemaAction {
 #[derive(Debug, Clone, Copy, ValueEnum)]
 pub enum SchemaName {
     Compact,
+    CompactV2,
     Normalized,
+    NormalizedV2,
     Spec,
+    SpecV2,
     Config,
 }

@@ -27,7 +27,7 @@ pub fn normalize_report(value: &Value) -> Result<NormalizationResult, NormalizeE
         return Err(NormalizeError::TopLevelNotObject);
     };
     match object.get("version").and_then(Value::as_u64) {
-        Some(compact::VERSION) => {
+        Some(compact::VERSION | crate::wire::v2::VERSION) => {
             let (input, warnings) = normalize_compact_report(value);
             Ok(NormalizationResult { input, warnings })
         }

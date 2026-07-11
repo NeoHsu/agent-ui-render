@@ -27,6 +27,10 @@ const VUE_HANDOFF_FILES: &[(&str, &str)] = &[
         include_str!("../../../../renderer-vue/src/chart-model.ts"),
     ),
     (
+        "chart-data.ts",
+        include_str!("../../../../renderer-vue/src/chart-data.ts"),
+    ),
+    (
         "chart-selection.ts",
         include_str!("../../../../renderer-vue/src/chart-selection.ts"),
     ),
@@ -41,6 +45,10 @@ const VUE_HANDOFF_FILES: &[(&str, &str)] = &[
     (
         "types.ts",
         include_str!("../../../../renderer-vue/src/types.ts"),
+    ),
+    (
+        "vega-theme.ts",
+        include_str!("../../../../renderer-vue/src/vega-theme.ts"),
     ),
     (
         "env.d.ts",
@@ -85,6 +93,22 @@ const VUE_HANDOFF_FILES: &[(&str, &str)] = &[
     (
         "components/ReportViewBlock.vue",
         include_str!("../../../../renderer-vue/src/components/ReportViewBlock.vue"),
+    ),
+    (
+        "components/charts/VegaLiteChart.vue",
+        include_str!("../../../../renderer-vue/src/components/charts/VegaLiteChart.vue"),
+    ),
+    (
+        "composables/useVegaLiteView.ts",
+        include_str!("../../../../renderer-vue/src/composables/useVegaLiteView.ts"),
+    ),
+    (
+        "package.json",
+        include_str!("../../../../renderer-vue/src/handoff-package.json"),
+    ),
+    (
+        "README.md",
+        include_str!("../../../../renderer-vue/src/HANDOFF.md"),
     ),
     (
         "components/charts/BarChartView.vue",
@@ -359,11 +383,24 @@ fn render_views(input: &Report) -> String {
         .iter()
         .enumerate()
         .map(|(index, view)| {
-            let title = escape_html(view.title.as_deref().unwrap_or(&view_title(view, index)));
+            let fallback_title = if view.intent == crate::domain::VIEW_INTENT_CHART {
+                view.chart
+                    .as_deref()
+                    .map_or_else(|| "Chart".to_owned(), titleize_chart_name)
+            } else {
+                view_title(view, index)
+            };
+            let title = escape_html(view.title.as_deref().unwrap_or(&fallback_title));
             let body = input.datasets.get(&view.data).map_or_else(
                 || "<p class=\"empty\">No dataset available for this view.</p>".to_owned(),
                 |dataset| {
-                    if view.intent == "precise_records" {
+                    if view.intent == crate::domain::VIEW_INTENT_CHART {
+                        format!(
+                            "<p class=\"chart-static-note\">Interactive {} chart available in the JavaScript-enabled HTML output.</p>{}",
+                            escape_html(view.chart.as_deref().unwrap_or("advanced")),
+                            render_table(dataset)
+                        )
+                    } else if view.intent == "precise_records" {
                         render_table_for_view(dataset, view)
                     } else {
                         render_chart_or_table(dataset, view)
@@ -946,6 +983,20 @@ fn view_title(view: &ViewIntent, index: usize) -> String {
         "overview" => "Overview".to_owned(),
         _ => format!("View {}", index + 1),
     }
+}
+
+fn titleize_chart_name(value: &str) -> String {
+    value
+        .split(['-', '_'])
+        .filter(|part| !part.is_empty())
+        .map(|part| {
+            let mut chars = part.chars();
+            chars.next().map_or_else(String::new, |first| {
+                format!("{}{}", first.to_uppercase(), chars.as_str())
+            })
+        })
+        .collect::<Vec<_>>()
+        .join(" ")
 }
 
 #[must_use]

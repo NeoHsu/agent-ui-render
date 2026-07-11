@@ -5,14 +5,14 @@ use crate::{
         bar_orientation_for_view, chart_kind_for_view, first_non_measure_column,
         first_numeric_columns,
     },
-    domain::{Dataset, FORMAT_VERSION, Report, SPEC_SCHEMA, ViewIntent},
+    domain::{Dataset, Report, SPEC_SCHEMA, ViewIntent},
 };
 
 #[must_use]
 pub fn plan_ui_spec(input: &Report) -> Value {
     let mut spec = Map::new();
     spec.insert("schema".to_owned(), json!(SPEC_SCHEMA));
-    spec.insert("version".to_owned(), json!(FORMAT_VERSION));
+    spec.insert("version".to_owned(), json!(input.version));
     if let Some(title) = &input.title {
         spec.insert("title".to_owned(), json!(title));
     }
@@ -92,6 +92,28 @@ fn add_markdown_blocks(blocks: &mut Vec<Value>, input: &Report) {
 
 fn add_view_blocks(blocks: &mut Vec<Value>, input: &Report) {
     for (index, view) in input.views.iter().enumerate() {
+        if view.intent == crate::domain::VIEW_INTENT_CHART {
+            let Some(spec) = &view.spec else {
+                continue;
+            };
+            let mut block = Map::new();
+            block.insert("id".to_owned(), json!(format!("chart_v2_{}", index + 1)));
+            block.insert("type".to_owned(), json!("chart"));
+            block.insert(
+                "chart".to_owned(),
+                json!(view.chart.as_deref().unwrap_or("chart")),
+            );
+            block.insert("data".to_owned(), json!(view.data));
+            block.insert("spec".to_owned(), spec.clone());
+            if let Some(datasets) = &view.datasets {
+                block.insert("datasets".to_owned(), json!(datasets));
+            }
+            if let Some(title) = &view.title {
+                block.insert("title".to_owned(), json!(title));
+            }
+            blocks.push(Value::Object(block));
+            continue;
+        }
         let Some(dataset) = input.datasets.get(&view.data) else {
             continue;
         };

@@ -70,15 +70,16 @@ pub const ALERT_LEVEL_CODES: &[&str] = &[
 ];
 
 #[derive(Debug, Clone)]
-struct CompactColumnMeta {
-    key: String,
-    type_code: String,
+pub(crate) struct CompactColumnMeta {
+    pub(crate) key: String,
+    pub(crate) type_code: String,
 }
 
 #[derive(Debug, Clone)]
-struct CompactDatasetMeta {
-    id: String,
-    columns: Vec<CompactColumnMeta>,
+pub(crate) struct CompactDatasetMeta {
+    pub(crate) id: String,
+    pub(crate) columns: Vec<CompactColumnMeta>,
+    pub(crate) materialized: bool,
 }
 
 #[must_use]
@@ -94,6 +95,12 @@ pub fn normalize_compact_report(value: &Value) -> (Report, Vec<Finding>) {
             }],
         );
     };
+
+    input.version = object
+        .get("version")
+        .and_then(Value::as_u64)
+        .and_then(|version| u32::try_from(version).ok())
+        .unwrap_or(domain::FORMAT_VERSION);
 
     if let Some(text) = object.get("t").and_then(Value::as_str) {
         input.title = Some(text.to_owned());
@@ -159,6 +166,7 @@ pub fn normalize_compact_report(value: &Value) -> (Report, Vec<Finding>) {
                         key: "reference".to_owned(),
                         type_code: TYPE_CODE_STRING.to_owned(),
                     }],
+                    materialized: false,
                 });
                 warnings.push(Finding {
                     level: FindingLevel::Warning,
@@ -195,6 +203,7 @@ pub fn normalize_compact_report(value: &Value) -> (Report, Vec<Finding>) {
             dataset_metas.push(CompactDatasetMeta {
                 id: dataset_id.to_owned(),
                 columns,
+                materialized: true,
             });
         }
     }
@@ -203,6 +212,7 @@ pub fn normalize_compact_report(value: &Value) -> (Report, Vec<Finding>) {
     input.markdown = normalize_compact_markdown(object.get("md"));
     input.views = normalize_compact_views(
         object.get("v"),
+        input.version,
         &dataset_metas,
         &mut skipped_view_alerts,
         &mut warnings,
@@ -331,6 +341,7 @@ fn normalize_compact_metrics(value: Option<&Value>) -> Vec<Metric> {
 
 fn normalize_compact_views(
     value: Option<&Value>,
+    version: u32,
     dataset_metas: &[CompactDatasetMeta],
     skipped_alerts: &mut Vec<Alert>,
     warnings: &mut Vec<Finding>,
@@ -341,7 +352,42 @@ fn normalize_compact_views(
         .flatten()
         .enumerate()
         .filter_map(|(index, view)| {
-            let normalized = normalize_compact_view(view, index, dataset_metas, warnings);
+            let code = view
+                .as_array()
+                .and_then(|tuple| tuple.first())
+                .and_then(Value::as_str);
+            let normalized = if version == domain::FORMAT_VERSION_V2
+                && code.is_some_and(|item| !is_view_code(item))
+            {
+                let metas = dataset_metas
+                    .iter()
+                    .map(|dataset| crate::wire::v2::DatasetMeta {
+                        id: dataset.id.clone(),
+                        columns: dataset
+                            .columns
+                            .iter()
+                            .map(|column| crate::wire::v2::ColumnMeta {
+                                key: column.key.clone(),
+                                type_code: column.type_code.clone(),
+                            })
+                            .collect(),
+                        materialized: dataset.materialized,
+                    })
+                    .collect::<Vec<_>>();
+                match crate::wire::v2::normalize_view(view, index, &metas) {
+                    Ok(view) => Some(view),
+                    Err(message) => {
+                        warnings.push(Finding {
+                            level: FindingLevel::Warning,
+                            path: format!("$.v[{index}]"),
+                            message,
+                        });
+                        None
+                    }
+                }
+            } else {
+                normalize_compact_view(view, index, dataset_metas, warnings)
+            };
             if normalized.is_none() {
                 skipped_alerts.push(Alert {
                     level: domain::ALERT_LEVEL_WARNING.to_owned(),
@@ -377,6 +423,9 @@ fn normalize_compact_view(
             columns: (!columns.is_empty()).then_some(columns),
             priority: None,
             title: None,
+            chart: None,
+            datasets: None,
+            spec: None,
         });
     }
     if code == VIEW_CODE_OVERVIEW {
@@ -389,6 +438,9 @@ fn normalize_compact_view(
             columns: None,
             priority: None,
             title: None,
+            chart: None,
+            datasets: None,
+            spec: None,
         });
     }
 
@@ -418,6 +470,9 @@ fn normalize_compact_view(
             columns: None,
             priority: None,
             title: None,
+            chart: None,
+            datasets: None,
+            spec: None,
         });
     }
 
@@ -450,6 +505,9 @@ fn normalize_compact_view(
         columns: None,
         priority: None,
         title: None,
+        chart: None,
+        datasets: None,
+        spec: None,
     })
 }
 
