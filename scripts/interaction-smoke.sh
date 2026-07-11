@@ -29,9 +29,9 @@ fi
 
 (cd renderer-vue && bun run build)
 mkdir -p target/visual-smoke
-cargo run --quiet -- render html \
-	examples/v2-chart-showcase.input.json \
-	target/visual-smoke/v2-chart-showcase.html >/dev/null
+INPUT="${INTERACTION_INPUT:-examples/v2-chart-showcase.input.json}"
+HTML="${INTERACTION_HTML:-target/visual-smoke/v2-chart-showcase.html}"
+cargo run --quiet -- render html "$INPUT" "$HTML" >/dev/null
 
 PORT="$({
 	python3 - <<'PY'
@@ -53,9 +53,11 @@ LOG="$PROFILE/chrome.log"
 	--remote-debugging-address=127.0.0.1 \
 	--remote-debugging-port="$PORT" \
 	--user-data-dir="$PROFILE/profile" \
-	"file://$ROOT/target/visual-smoke/v2-chart-showcase.html" \
+	"file://$ROOT/$HTML" \
 	>"$LOG" 2>&1 &
 CHROME_PID=$!
+# Invoked indirectly by the EXIT trap below.
+# shellcheck disable=SC2329
 cleanup() {
 	kill "$CHROME_PID" 2>/dev/null || true
 	wait "$CHROME_PID" 2>/dev/null || true
@@ -63,9 +65,15 @@ cleanup() {
 }
 trap cleanup EXIT
 
+SCREENSHOT_ARGS=()
+if [[ -n "${INTERACTION_SCREENSHOT_DIR:-}" ]]; then
+	mkdir -p "$INTERACTION_SCREENSHOT_DIR"
+	SCREENSHOT_ARGS+=("$INTERACTION_SCREENSHOT_DIR")
+fi
+
 for _ in $(seq 1 100); do
 	if curl --silent --fail "http://127.0.0.1:$PORT/json" >/dev/null; then
-		bun scripts/interaction-smoke.ts "$PORT"
+		bun scripts/interaction-smoke.ts "$PORT" "${SCREENSHOT_ARGS[@]}"
 		exit 0
 	fi
 	sleep 0.2

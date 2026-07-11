@@ -89,20 +89,22 @@ available without JavaScript.
 
 ## Rich interaction behavior
 
-Rich HTML keeps SVG output interactive. Data marks expose a floating,
-text-only tooltip and pointer feedback. Set `sel` when the report needs a
+Rich HTML keeps SVG output interactive. Data marks expose a structured,
+series-aware tooltip and pointer feedback. Set `sel` when the report needs a
 persistent interaction:
 
 - `hover`: highlight the nearest mark while the pointer is over the plot.
 - `click`: select a mark, dim the remaining marks, and clear on double-click.
 - `brush`: drag an interval to select marks inside it.
-- `zoom`: drag or scroll to pan/zoom bound scales.
+- `zoom`: drag an interval or use minus/plus controls to change bound
+  scales.
 - `legend`: select a generated series through its legend and dim the others.
 
-An interaction hint is shown above configured charts. Persistent selections
-have a **Reset** button and can also be reset with Escape while the chart has
-focus. Vega-generated SVG accessibility labels remain available to assistive
-technology. `render static-html` intentionally has no interaction and preserves
+A consistent toolbar lane keeps configured charts aligned without covering
+legends. Persistent selections expose **Clear** and can also be reset with
+Escape while the chart has focus. Vega-generated SVG accessibility labels
+remain available to assistive technology. `render static-html` intentionally
+has no interaction and preserves
 facts through its native chart or accessible table fallback.
 
 ## Compatibility

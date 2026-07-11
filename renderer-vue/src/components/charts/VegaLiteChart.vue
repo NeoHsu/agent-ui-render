@@ -57,10 +57,8 @@ const hydratedSpec = computed(
       props.datasets,
     ) as unknown as TopLevelSpec,
 );
-const { error, interactionActive, tooltip, resetInteraction } = useVegaLiteView(
-  host,
-  hydratedSpec,
-);
+const { error, interactionActive, tooltip, resetInteraction, zoomBy } =
+  useVegaLiteView(host, hydratedSpec);
 const showHoverGuide = computed(
   () =>
     tooltip.value.visible &&
@@ -81,12 +79,16 @@ const hoverGuideStyle = computed(() => ({
     :data-interaction="interaction?.mode"
     @keydown.esc="resetInteraction()"
   >
-    <ChartInteractionBar
-      v-if="interaction"
-      :interaction="interaction"
-      :active="interactionActive"
-      @reset="resetInteraction()"
-    />
+    <div class="chart-toolbar-lane">
+      <ChartInteractionBar
+        v-if="interaction"
+        :interaction="interaction"
+        :active="interactionActive"
+        @reset="resetInteraction()"
+        @zoom-in="zoomBy(0.8)"
+        @zoom-out="zoomBy(1.25)"
+      />
+    </div>
     <div
       ref="host"
       class="vega-chart"

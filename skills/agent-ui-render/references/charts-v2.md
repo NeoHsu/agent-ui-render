@@ -88,10 +88,11 @@ Examples:
 Unknown options are validation errors. Not every option applies to every chart;
 use only options that express an actual requirement.
 
-Rich HTML always provides SVG mark tooltips and pointer feedback. `sel` adds a
-visible governed interaction: `hover` emphasizes the nearest mark; `click`,
-`brush`, and `legend` dim unselected marks; `zoom` binds pan/zoom to scales.
-Persistent interactions include Reset and Escape handling. Static HTML remains
+Rich HTML always provides structured SVG mark tooltips and pointer feedback.
+`sel` adds a visible governed interaction: `hover` emphasizes the nearest mark;
+`click`, `brush`, and `legend` dim unselected marks; `zoom` binds pan/zoom to
+scales and exposes minus/plus controls. Persistent interactions include Clear
+and Escape handling. Static HTML remains
 non-interactive and preserves facts through native output or a table fallback.
 
 ## Layout tuples

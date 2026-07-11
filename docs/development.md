@@ -27,6 +27,13 @@ make visual-smoke   build visual smoke artifacts
 make interaction-smoke exercise tooltip and selection UX in headless Chrome
 ```
 
+Capture the tooltip, click, legend, brush, and zoom states during that smoke
+run by setting an output directory:
+
+```bash
+INTERACTION_SCREENSHOT_DIR=target/visual-smoke/interactions make interaction-smoke
+```
+
 ## Documentation diagram style
 
 Use fenced `text` blocks with ASCII-only diagrams for architecture and flow

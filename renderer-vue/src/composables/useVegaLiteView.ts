@@ -68,15 +68,28 @@ function displayValue(value: unknown): string {
 function tooltipLabel(label: string): string {
 	const normalized = label.replace(/^__/, "").replaceAll("_", " ").trim();
 	if (!normalized) return "Value";
-	return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+	return normalized
+		.split(/\s+/)
+		.map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+		.join(" ");
+}
+
+function tooltipEntryValue(label: string, value: unknown): string {
+	if (/^(series|dimension)$/i.test(label) && typeof value === "string") {
+		return tooltipLabel(value);
+	}
+	return displayValue(value);
 }
 
 function tooltipEntries(value: unknown): VegaTooltipEntry[] {
 	if (value && typeof value === "object" && !Array.isArray(value)) {
-		return Object.entries(value).map(([label, item]) => ({
-			label: tooltipLabel(label),
-			value: displayValue(item),
-		}));
+		return Object.entries(value).map(([label, item]) => {
+			const displayLabel = tooltipLabel(label);
+			return {
+				label: displayLabel,
+				value: tooltipEntryValue(displayLabel, item),
+			};
+		});
 	}
 	return [{ label: "Value", value: displayValue(value) }];
 }
@@ -84,12 +97,12 @@ function tooltipEntries(value: unknown): VegaTooltipEntry[] {
 function ariaTooltipEntries(label: string): VegaTooltipEntry[] {
 	return label.split(";").map((part) => {
 		const separator = part.indexOf(":");
-		return separator < 0
-			? { label: "Data", value: part.trim() }
-			: {
-					label: tooltipLabel(part.slice(0, separator).trim()),
-					value: part.slice(separator + 1).trim(),
-				};
+		if (separator < 0) return { label: "Data", value: part.trim() };
+		const displayLabel = tooltipLabel(part.slice(0, separator).trim());
+		return {
+			label: displayLabel,
+			value: tooltipEntryValue(displayLabel, part.slice(separator + 1).trim()),
+		};
 	});
 }
 
@@ -97,6 +110,9 @@ function tooltipContent(entries: VegaTooltipEntry[]): {
 	title: string | null;
 	entries: VegaTooltipEntry[];
 } {
+	if (entries.length === 1 && entries[0]?.label === "Legend Item") {
+		return { title: entries[0].value, entries: [] };
+	}
 	const titleEntry = entries.find(
 		(entry) => !/^(value|amount|count|measure|size)$/i.test(entry.label),
 	);
@@ -113,7 +129,8 @@ function safeSceneColor(item: unknown): string | null {
 	for (const candidate of [sceneItem.fill, sceneItem.stroke]) {
 		if (
 			typeof candidate === "string" &&
-			(/^#[0-9a-f]{3,8}$/i.test(candidate) || /^rgba?\([\d\s,.%]+\)$/i.test(candidate))
+			(/^#[0-9a-f]{3,8}$/i.test(candidate) ||
+				/^rgba?\([\d\s,.%]+\)$/i.test(candidate))
 		) {
 			return candidate;
 		}
@@ -132,17 +149,20 @@ function createTooltipHandler(
 			return;
 		}
 		const bounds = element.getBoundingClientRect();
-		const anchorX = Math.max(0, Math.min(event.clientX - bounds.left, bounds.width));
-		const anchorY = Math.max(0, Math.min(event.clientY - bounds.top, bounds.height));
+		const anchorX = Math.max(
+			0,
+			Math.min(event.clientX - bounds.left, bounds.width),
+		);
+		const anchorY = Math.max(
+			0,
+			Math.min(event.clientY - bounds.top, bounds.height),
+		);
 		const content = tooltipContent(tooltipEntries(value));
 		tooltip.value = {
 			visible: true,
 			x:
 				element.offsetLeft +
-				Math.min(
-					Math.max(12, anchorX + 14),
-					Math.max(12, bounds.width - 260),
-				),
+				Math.min(Math.max(12, anchorX + 14), Math.max(12, bounds.width - 260)),
 			y: element.offsetTop + Math.max(12, anchorY + 14),
 			anchorX: element.offsetLeft + anchorX,
 			anchorY: element.offsetTop + anchorY,
@@ -245,7 +265,8 @@ const persistentInteractionSignals = new Set([
 ]);
 
 function interactionSignalNames(spec: VegaSpec): string[] {
-	const signals = (spec as { signals?: Array<{ name?: unknown }> }).signals ?? [];
+	const signals =
+		(spec as { signals?: Array<{ name?: unknown }> }).signals ?? [];
 	return signals
 		.map((signal) => signal.name)
 		.filter(
@@ -265,7 +286,10 @@ function interactionValueIsActive(value: unknown): boolean {
 	);
 }
 
-function compileTrustedSpec(spec: TopLevelSpec, element: HTMLElement): VegaSpec {
+function compileTrustedSpec(
+	spec: TopLevelSpec,
+	element: HTMLElement,
+): VegaSpec {
 	return compile(spec, { config: vegaTheme(element) }).spec as VegaSpec;
 }
 
@@ -287,6 +311,41 @@ function createTrustedView(
 		});
 	}
 	return view;
+}
+
+function centeredZoomRange(
+	value: unknown,
+	size: number,
+	factor: number,
+): [number, number] {
+	const range =
+		Array.isArray(value) &&
+		value.length === 2 &&
+		typeof value[0] === "number" &&
+		typeof value[1] === "number" &&
+		value[0] !== value[1]
+			? [value[0], value[1]]
+			: [0, size];
+	const center = (range[0] + range[1]) / 2;
+	const span = Math.min(size, Math.max(8, (range[1] - range[0]) * factor));
+	const start = Math.max(0, Math.min(size - span, center - span / 2));
+	return [start, start + span];
+}
+
+async function zoomView(view: View, factor: number): Promise<void> {
+	if (!Number.isFinite(factor) || factor <= 0) return;
+	const width = Number(view.signal("width"));
+	const height = Number(view.signal("height"));
+	if (!(width > 0 && height > 0)) return;
+	view.signal(
+		"agent_zoom_x",
+		centeredZoomRange(view.signal("agent_zoom_x"), width, factor),
+	);
+	view.signal(
+		"agent_zoom_y",
+		centeredZoomRange(view.signal("agent_zoom_y"), height, factor),
+	);
+	await view.runAsync();
 }
 
 function installKeyboardInteractions(
@@ -381,6 +440,10 @@ export function useVegaLiteView(
 		await render();
 	}
 
+	async function zoomBy(factor: number): Promise<void> {
+		if (activeView.value) await zoomView(activeView.value, factor);
+	}
+
 	watch(spec, render, { immediate: true, flush: "post" });
 
 	onBeforeUnmount(() => {
@@ -398,5 +461,6 @@ export function useVegaLiteView(
 		tooltip: readonly(tooltip),
 		rerender: render,
 		resetInteraction,
+		zoomBy,
 	};
 }

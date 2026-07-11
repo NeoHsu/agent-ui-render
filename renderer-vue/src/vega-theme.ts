@@ -16,7 +16,8 @@ export function vegaTheme(element: HTMLElement): Config {
 	const border = token(style, "--agent-chart-border", "#d1d5db");
 	const grid = token(style, "--agent-chart-grid", border);
 	const chartBackground = token(style, "--agent-chart-bg", "transparent");
-	const font = style.fontFamily || "Inter, ui-sans-serif, system-ui, sans-serif";
+	const font =
+		style.fontFamily || "Inter, ui-sans-serif, system-ui, sans-serif";
 	const series = Array.from({ length: 6 }, (_, index) =>
 		token(
 			style,
@@ -36,8 +37,11 @@ export function vegaTheme(element: HTMLElement): Config {
 			gridOpacity: 0.72,
 			gridWidth: 1,
 			labelColor: muted,
+			labelFlush: true,
 			labelFontSize: 11,
+			labelOverlap: "greedy",
 			labelPadding: 8,
+			tickCount: 6,
 			titleColor: text,
 			titleFontSize: 11,
 			titleFontWeight: 600,

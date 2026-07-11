@@ -232,6 +232,39 @@ fn compact_v2_covers_non_geo_non_image_chart_families() -> Result<(), Box<dyn Er
             [0]["select"]["fields"][0],
         "group"
     );
+    let line_spec = normalized.views[0]
+        .spec
+        .as_ref()
+        .ok_or_else(|| io::Error::other("line chart should have a Vega-Lite spec"))?;
+    assert!(
+        line_spec["encoding"]["color"]["legend"]["labelExpr"]
+            .as_str()
+            .is_some_and(|expression| expression.contains("Value B"))
+    );
+    assert_eq!(
+        normalized.views[2]
+            .spec
+            .as_ref()
+            .ok_or_else(|| io::Error::other("trail chart should have a Vega-Lite spec"))?["encoding"]
+            ["size"]["legend"]["tickCount"],
+        3
+    );
+    assert_eq!(
+        normalized.views[9]
+            .spec
+            .as_ref()
+            .ok_or_else(|| io::Error::other("histogram should have a Vega-Lite spec"))?["encoding"]
+            ["x"]["title"],
+        "Value"
+    );
+    assert_eq!(
+        normalized.views[41]
+            .spec
+            .as_ref()
+            .ok_or_else(|| io::Error::other("2D histogram should have a Vega-Lite spec"))?["encoding"]
+            ["color"]["legend"]["format"],
+        "d"
+    );
 
     let spec = plan_ui_spec(&normalized);
     assert_eq!(spec["version"], domain::FORMAT_VERSION_V2);

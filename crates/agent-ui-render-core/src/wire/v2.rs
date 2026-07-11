@@ -457,10 +457,12 @@ fn trail_spec(
     let width = required_index(tuple, 4, "width")?;
     ensure_numeric(dataset, &[y, width], "trail y/width")?;
     let color = optional_index(tuple, 5)?;
+    let mut size = field_def(dataset, width, true)?;
+    size["legend"] = json!({"tickCount": 3});
     let mut encoding = json!({
         "x": field_def(dataset, x, false)?,
         "y": field_def(dataset, y, true)?,
-        "size": field_def(dataset, width, true)?
+        "size": size
     });
     if let Some(color) = color {
         encoding.insert("color".to_owned(), field_def(dataset, color, false)?);
@@ -705,7 +707,12 @@ fn histogram_spec(
         dataset,
         json!({"type": "bar", "tooltip": true}),
         json!({
-            "x": {"field": column(dataset, x)?.key, "type": "quantitative", "bin": {"maxbins": maxbins}},
+            "x": {
+                "field": column(dataset, x)?.key,
+                "type": "quantitative",
+                "bin": {"maxbins": maxbins},
+                "title": titleize(&column(dataset, x)?.key)
+            },
             "y": {"aggregate": "count", "type": "quantitative", "title": "Count"}
         }),
     ))
@@ -861,7 +868,9 @@ fn scatter_spec(
         encoding.insert("color".to_owned(), field_def(dataset, color, false)?);
     }
     if let Some(size) = size {
-        encoding.insert("size".to_owned(), field_def(dataset, size, true)?);
+        let mut size_definition = field_def(dataset, size, true)?;
+        size_definition["legend"] = json!({"tickCount": 3});
+        encoding.insert("size".to_owned(), size_definition);
     }
     let shape = option_string(options, "shape").unwrap_or("circle");
     Ok(base_spec(
@@ -977,7 +986,12 @@ fn heatmap_spec(
         }
         definition
     } else {
-        json!({"aggregate": "count", "type": "quantitative", "title": "Count"})
+        json!({
+            "aggregate": "count",
+            "type": "quantitative",
+            "title": "Count",
+            "legend": {"format": "d"}
+        })
     };
     Ok(base_spec(
         dataset,
@@ -1003,7 +1017,11 @@ fn mosaic_spec(
             "x": field_def(dataset, x, false)?,
             "y": field_def(dataset, y, false)?,
             "color": field_def(dataset, value, true)?,
-            "size": field_def(dataset, value, true)?
+            "size": {
+                "field": column(dataset, value)?.key,
+                "type": "quantitative",
+                "legend": null
+            }
         }),
     ))
 }
@@ -1181,7 +1199,12 @@ fn multi_measure_encoding(
         );
         encoding.insert(
             "color".to_owned(),
-            json!({"field": "__series", "type": "nominal", "title": "Series"}),
+            json!({
+                "field": "__series",
+                "type": "nominal",
+                "title": "Series",
+                "legend": {"labelExpr": series_legend_label_expr(&fields)}
+            }),
         );
         Ok((
             encoding,
@@ -1656,6 +1679,17 @@ fn ensure_numeric(dataset: &DatasetMeta, indexes: &[usize], role: &str) -> Resul
         }
     }
     Ok(())
+}
+
+fn series_legend_label_expr(fields: &[String]) -> String {
+    fields
+        .iter()
+        .rev()
+        .fold("datum.label".to_owned(), |fallback, field| {
+            let raw = serde_json::to_string(field).unwrap_or_else(|_| "\"\"".to_owned());
+            let label = serde_json::to_string(&titleize(field)).unwrap_or_else(|_| raw.clone());
+            format!("datum.label === {raw} ? {label} : ({fallback})")
+        })
 }
 
 fn datum_field(field: &str) -> String {
