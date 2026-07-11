@@ -12,8 +12,8 @@ Bun, npm, Vue, or `node_modules`.
 
 - Give coding agents a small, safe UI output contract instead of asking them to
   hand-write HTML, CSS, Vue, React, or JavaScript.
-- Convert compact model-authored `version: 1` payloads into validated runtime
-  data before anything is rendered.
+- Convert compact model-authored `version: 1` semantic reports and `version: 2`
+  advanced chart payloads into validated runtime data before anything is rendered.
 - Produce portable preview artifacts for reports, tables, metric cards, charts,
   alerts, and markdown narrative.
 - Keep release artifacts as single native binaries plus installer scripts.
@@ -226,7 +226,7 @@ Open `/tmp/revenue.html` in a browser.
 
 ```text
 +------------------------------+
-| Compact payload (version: 1) |
+| Compact payload (v1 or v2)   |
 +---------------+--------------+
                 |
                 v
@@ -264,7 +264,9 @@ Open `/tmp/revenue.html` in a browser.
 The compact wire format uses dataset indexes and short view/alert codes to keep
 LLM output small. Compact code mappings live in `wire::compact`; `normalize`
 expands them into the clean `domain::Report` model with
-`schema: "ui.input.normalized"` and `version: 1` before planning or rendering.
+`schema: "ui.input.normalized"` with the matching input version before planning
+or rendering. Version 2 adds governed chart opcodes backed internally by
+Vega-Lite; raw Vega-Lite specs, images, isotypes, and maps are not accepted.
 
 ## CLI surface
 
@@ -275,7 +277,7 @@ agent-ui-render plan <input.json> [output.json]
 agent-ui-render render html <input.json> <output.html>
 agent-ui-render render static-html <input.json> <output.html>
 agent-ui-render render vue <input.json> <output.vue>
-agent-ui-render schema print <compact|normalized|spec|config>
+agent-ui-render schema print <compact|compact-v2|normalized|normalized-v2|spec|spec-v2|config>
 agent-ui-render completion <shell>
 ```
 
@@ -358,6 +360,7 @@ Build/runtime architecture:
 - `docs/architecture.md` - runtime, build-time, and source-of-truth model.
 - `docs/cli-reference.md` - command reference and exit codes.
 - `docs/compatibility.md` - versioning and contract-change policy.
+- `docs/charts-v2.md` - governed advanced chart coverage and v2 behavior.
 - `docs/security-model.md` - trust boundaries and unsafe-content rules.
 - `docs/renderer-development.md` - Vue renderer development and handoff bundle.
 - `docs/release.md` - release process and cargo-dist publishing flow.

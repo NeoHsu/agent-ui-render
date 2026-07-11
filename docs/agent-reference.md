@@ -44,10 +44,12 @@ first, then follow the linked task-specific file.
 
 ## Required boundaries
 
-- The model-authored public boundary is compact JSON with `version: 1`.
+- The model-authored public boundary is compact JSON: version 1 for semantic
+  reports and version 2 for explicit governed chart families.
 - Agents must not smuggle HTML, CSS, JavaScript, Vue, React, SVG, event handlers,
   arbitrary component names, or arbitrary action names into payloads.
-- Rust validation and normalization are the runtime source of truth.
+- Rust validation, normalization, chart planning, and trusted Vega-Lite spec
+  generation are the runtime source of truth.
 - JSON Schemas mirror the Rust contract for integration checks.
 - Vue is a development-time renderer source, not a runtime dependency for users.
 - Runtime limits and theme tokens come from trusted host config, never from the

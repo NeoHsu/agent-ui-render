@@ -64,12 +64,17 @@ safe markdown text. Markdown is parsed as a small allowlist subset:
 | JavaScript URLs or handlers   | reject             |
 | Vue/React/JSX/template code   | reject             |
 | arbitrary component/actions   | reject             |
+| raw Vega-Lite specs/expressions| reject             |
+| image, isotype, geoshape, map | reject             |
 | safe text, markdown, data     | validate normally  |
 +-------------------------------+--------------------+
 ```
 
-Raw HTML, Vue, React, SVG, CSS, event handlers, component/action injection, and
-`javascript:` URLs are not part of the contract.
+Raw HTML, Vue, React, SVG, CSS, event handlers, component/action injection,
+raw Vega-Lite JSON, external chart URLs, images, isotypes, geoshapes, maps, and
+`javascript:` URLs are not part of the contract. Version 2 chart specs are
+created only by the trusted Rust planner, and the browser Vega runtime uses a
+loader that rejects all external resources.
 
 ## Runtime guardrails
 
@@ -113,7 +118,7 @@ remains outside the payload contract.
               |
               v
 +-----------------------------+
-| cargo audit                 |
+| cargo audit + bun audit     |
 +-------------+---------------+
               |
               v

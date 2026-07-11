@@ -2,9 +2,10 @@
 
 ## Stable boundary
 
-The stable model-authored boundary is compact input `version: 1`. Public tools
-should author only this wire format. Rust validation is the source of truth;
-JSON Schemas mirror the same contract for integration checks.
+The stable model-authored boundaries are compact input `version: 1` for
+semantic report views and `version: 2` for explicit governed chart families.
+Public tools should author only these compact wire formats. Rust validation is
+the source of truth; JSON Schemas mirror the contracts for integration checks.
 
 ```text
 +--------------------------+
@@ -14,7 +15,7 @@ JSON Schemas mirror the same contract for integration checks.
              v
 +--------------------------+
 | Compact JSON             |
-| version: 1               |
+| version: 1 or 2          |
 +------------+-------------+
              |
              v
@@ -42,7 +43,11 @@ contract.
 - Additive changes that old renderers can safely ignore may stay in version 1
   only when they do not change existing field meaning.
 - New compact codes, changed tuple shapes, removed fields, or changed semantics
-  require a new input version.
+  require a new input version unless added to the explicitly extensible v2 chart
+  registry without changing an existing tuple meaning.
+- Version 1 behavior remains frozen while version 2 evolves additively.
+- Raw Vega-Lite specifications are not a compatibility boundary; Vega-Lite is
+  an internal replaceable renderer.
 - Schema files must stay in parity with Rust constants and validators. CI tests
   validate examples against Rust and JSON Schema and compare schema enums with
   centralized Rust mappings.

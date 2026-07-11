@@ -63,6 +63,7 @@ cd renderer-vue
 bun install
 bun run typecheck
 bun run build
+bun audit
 
 cd ..
 cargo audit
@@ -81,8 +82,8 @@ HTML/static HTML smoke artifacts.
 ## Tag release
 
 ```bash
-git tag v0.2.0
-git push origin v0.2.0
+git tag v0.3.0
+git push origin v0.3.0
 ```
 
 The privileged release workflow uses the committed generated assets, runs

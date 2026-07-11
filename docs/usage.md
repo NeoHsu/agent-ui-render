@@ -14,7 +14,7 @@ payloads. It assumes `agent-ui-render` is already installed or available through
              v
 +--------------------------+
 | Author compact JSON      |
-| version: 1               |
+| version: 1 or 2          |
 +------------+-------------+
              |
              v
@@ -52,8 +52,10 @@ references). Read it before producing non-trivial payloads:
 - `skills/agent-ui-render/references/ui-input.md` — full payload contract.
 - `skills/agent-ui-render/references/dataset.md` — dataset and column rules.
 
-Core rules, in brief: output compact JSON only; put shared tabular data under
-top-level `d` and reference it by indexes from views; use `md` and alerts for
+Core rules, in brief: output compact JSON only; use version 1 for semantic
+report views and version 2 only for explicit advanced charts; put shared
+tabular data under top-level `d` and reference it by indexes from views; use
+`md` and alerts for
 narrative and caveats; never write HTML, CSS, JavaScript, or component/action
 names into payload strings.
 
@@ -137,10 +139,22 @@ Print JSON Schemas:
 
 ```bash
 agent-ui-render schema print compact
+agent-ui-render schema print compact-v2
 agent-ui-render schema print normalized
+agent-ui-render schema print normalized-v2
 agent-ui-render schema print spec
+agent-ui-render schema print spec-v2
 agent-ui-render schema print config
 ```
+
+## Advanced charts
+
+Use compact version 2 for explicit area, histogram, heatmap, statistical,
+financial, layered, faceted, or interactive chart families. The syntax remains
+the project's compact tuple contract; Vega-Lite is an internal renderer and raw
+Vega-Lite JSON is rejected. Images, isotypes, geoshapes, and maps are not
+supported. See `docs/charts-v2.md` and
+`skills/agent-ui-render/references/charts-v2.md`.
 
 ## Trusted config
 

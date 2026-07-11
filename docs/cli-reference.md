@@ -45,7 +45,7 @@ Payloads cannot set those values.
 agent-ui-render validate input.json
 ```
 
-Validates compact version 1 input.
+Validates compact version 1 semantic input or compact version 2 governed chart input.
 
 Machine-readable output:
 
@@ -66,8 +66,8 @@ agent-ui-render normalize input.json normalized.json
 agent-ui-render --pretty normalize input.json
 ```
 
-Outputs a normalized report with `schema: "ui.input.normalized"` and
-`version: 1`.
+Outputs a normalized report with `schema: "ui.input.normalized"` and the
+same version as the compact input.
 
 ## `plan`
 
@@ -75,7 +75,8 @@ Outputs a normalized report with `schema: "ui.input.normalized"` and
 agent-ui-render plan input.json spec.json
 ```
 
-Outputs a canonical UI spec with `schema: "ui.spec"` and `version: 1`.
+Outputs a canonical UI spec with `schema: "ui.spec"` and the same version as
+the compact input.
 
 ## `render html`
 
@@ -120,8 +121,11 @@ bundle.
 
 ```bash
 agent-ui-render schema print compact
+agent-ui-render schema print compact-v2
 agent-ui-render schema print normalized
+agent-ui-render schema print normalized-v2
 agent-ui-render schema print spec
+agent-ui-render schema print spec-v2
 agent-ui-render schema print config
 ```
 

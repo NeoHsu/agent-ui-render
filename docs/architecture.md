@@ -15,7 +15,7 @@ is bundled into the binary before release.
               v
 +----------------------------+
 | Compact JSON payload       |
-| version: 1                 |
+| version: 1 or version: 2   |
 +-------------+--------------+
               |
               v
@@ -26,7 +26,7 @@ is bundled into the binary before release.
               |
               v
 +----------------------------+
-| Validate compact input     |
+| Validate compact v1/v2     |
 +-------------+--------------+
               |
               v
@@ -156,6 +156,8 @@ Vue renderer. For no-JS artifacts, use `render static-html`.
 +--------------------------+-----------------------------------------+
 ```
 
-Rust is the runtime source of truth for validation, normalization, planning, and
-static rendering. Vue remains the source of truth for visual component
-maintenance in the client preview and handoff bundle.
+Rust is the runtime source of truth for validation, normalization, planning,
+trusted Vega-Lite specification generation, and static rendering. Vue remains
+the source of truth for visual component maintenance in the client preview and
+handoff bundle. Vega and Vega-Lite are bundled build-time dependencies used for
+version 2 rich charts; payload authors never provide raw Vega-Lite specs.

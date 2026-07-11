@@ -60,12 +60,15 @@ Rust embeds these files through `include_str!`, so they must exist before
 ## Development rules
 
 - Keep renderer payload data as normalized reports (`schema: "ui.input.normalized"`,
-  `version: 1`); do not add arbitrary component names, event handlers, or styles
-  to the payload contract.
+  `version: 1` or `version: 2`); do not add arbitrary component names, event
+  handlers, styles, or raw Vega-Lite specifications to the payload contract.
 - Use `agent-ui.css` tokens for themes; public config `themeTokens` may override
   color tokens, so new renderer colors should be represented as `--agent-*`
   custom properties instead of hard-coded values.
-- Keep chart decision semantics aligned with Rust `chart_kind_for_view`.
+- Keep v1 chart decision semantics aligned with Rust `chart_kind_for_view`.
+- Version 2 Vega-Lite specs come from the trusted Rust planner. The Vue renderer
+  only attaches normalized dataset rows and owns Vega View lifecycle cleanup.
+- Vega's loader must continue rejecting all external network/file resources.
 - Commit `renderer-vue/src` changes and generated asset changes together.
 - Run Rust and Vue checks before release.
 

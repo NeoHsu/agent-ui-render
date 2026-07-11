@@ -10,7 +10,8 @@ description: >-
   「視覺化報告」. When the `agent-ui-render` CLI or this repository is
   available, this skill supersedes hand-authored chart/dashboard code: the
   deliverable is a validated compact JSON payload rendered by the CLI, never
-  hand-written UI. The model authors compact JSON with `version: 1`; the
+  hand-written UI. The model authors compact JSON with `version: 1` for semantic
+  report views or `version: 2` for explicit governed chart families; the
   bundled zero-install `agent-ui-render` CLI validates, normalizes, and renders
   previews. Do not use this skill for arbitrary frontend implementation,
   CSS/layout work, or hand-written renderer code.
@@ -20,8 +21,10 @@ compatibility: Requires the `agent-ui-render` binary (on PATH, or built at `targ
 # Agent UI Render
 
 Generate browser-openable Agent UI HTML from data or analysis without asking the
-model to hand-write UI. The model-authored boundary is compact JSON with
-`version: 1`; the CLI validates, normalizes, optionally plans, then renders HTML.
+model to hand-write UI. The model-authored boundary is compact JSON: use
+`version: 1` for semantic report views and `version: 2` only for explicit
+advanced chart families. The CLI validates, normalizes, optionally plans, then
+renders HTML.
 
 ```text
 LLM compact input -> agent-ui-render validate -> normalize -> render HTML
@@ -56,6 +59,8 @@ The tables in this file are a quick reference only. Full semantics live in:
 - `references/dataset.md` — dataset, column, and row rules, external refs,
   dictionary encoding, and view/column compatibility. Read it before shaping
   any dataset.
+- `references/ui-input-v2.md` and `references/charts-v2.md` — explicit advanced
+  chart tuples and layouts. Read both before authoring any `version: 2` payload.
 - When unsure of the exact compact shape, run
   `agent-ui-render schema print compact` — its output always matches the
   installed binary and overrides any doc drift.
@@ -107,7 +112,8 @@ The tables in this file are a quick reference only. Full semantics live in:
 
 ## Compact contract summary
 
-Default payload shape:
+Default payload shape remains version 1; use version 2 only when an explicit
+advanced chart is required:
 
 ```ts
 type CompactReport = {
@@ -134,6 +140,11 @@ View tuples take indexes (never dataset ids): `["o", dataset]`,
 `["r", dataset, [columns]?]`, `["t", dataset, xColumn, [measureColumns]]`,
 `["b" | "p", dataset, dimension, [measures]]`,
 `["d", dataset, dimension, [measures]?]`, `["s", dataset, x, [measures]]`.
+
+Version 2 keeps the same top-level data contract and adds chart codes such as
+`hist`, `ar`, `heat`, `box`, `sc`, `gantt`, and controlled `layer`/`facet`
+layouts. It never accepts raw Vega-Lite JSON. Image, isotype, geoshape, and map
+charts are unsupported. See `references/charts-v2.md` for exact tuples.
 
 Complete minimal payload — a dataset `[id, columns, rows]`, a trend view over
 column 1 by column 0, and a records table:
@@ -184,16 +195,19 @@ c critical
 1. Extract facts and intent. Do not invent rows, metrics, units, or business
    meaning.
 2. Put reusable tabular data under `d` with `[id, columns, rows]` by default.
-3. Add metrics in `m`, concise summary in `s`, and caveats in `a`.
-4. Choose a deliberate presentation profile unless the user or host already
+3. Stay on version 1 for semantic `t`/`b`/`d`/`p`/`s`/`r` views. Switch to
+   version 2 only when the requested chart needs an explicit opcode from
+   `references/charts-v2.md`.
+4. Add metrics in `m`, concise summary in `s`, and caveats in `a`.
+5. Choose a deliberate presentation profile unless the user or host already
    specifies one: use `technical-dark` for incident, reliability, and
    operational dashboards; `executive-clean` for finance and leadership briefs;
    otherwise use `report-light`. Prefer `density: "compact"` for multi-view
    dashboards and `comfortable` for narrative reports.
-5. Select semantic view tuples such as `r`, `t`, `b`, `p`, `s`, or `d`.
+6. Select semantic view tuples such as `r`, `t`, `b`, `p`, `s`, or `d`.
    Use `b` for grouped period/category bars and `t` when continuity or rate of
    change is the primary message.
-6. Validate:
+7. Validate:
 
    ```bash
    agent-ui-render validate --warnings-as-errors <input.json>
@@ -203,7 +217,7 @@ c critical
    compact JSON as many rounds as needed; never fall back to hand-written
    HTML/Vue/React.
 
-7. Render by default:
+8. Render by default:
 
    ```bash
    agent-ui-render render html <input.json> <output.html>

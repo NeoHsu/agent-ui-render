@@ -20,10 +20,11 @@ make dev            build assets and run CLI help from source
 make typecheck      run Vue and Rust type checks
 make lint           run typecheck, rustfmt check, and clippy
 make test           build assets and run Rust tests
-make audit          run cargo audit
+make audit          run Cargo and Bun dependency audits
 make check          run release-quality local checks
 make verify-release run release binary smoke verification
 make visual-smoke   build visual smoke artifacts
+make interaction-smoke exercise tooltip and selection UX in headless Chrome
 ```
 
 ## Documentation diagram style
@@ -112,7 +113,7 @@ USER RUNTIME                                      +------------------------+
 +----------------------+-----------------------------------------------+
 | CLI behavior         | crates/agent-ui-render-cli, e2e tests, docs  |
 | Payload contract     | wire, domain, validate, normalize, schemas   |
-| Planning/charts      | spec, chart, chart-selection.ts, model.ts    |
+| Planning/charts      | spec, chart, wire/v2, Vega builder, Vue charts|
 | Static HTML          | core render module and core tests            |
 | Vue renderer UI      | renderer-vue/src plus generated assets       |
 +----------------------+-----------------------------------------------+
@@ -190,6 +191,10 @@ USER RUNTIME                                      +------------------------+
 | make check                   |
 +------------------------------+
 ```
+
+For compact v2 chart work, also update `schemas/v2`,
+`skills/agent-ui-render/references/charts-v2.md`, the trusted Vega-Lite builder,
+and browser no-network smoke coverage.
 
 A contract change is not complete until all of these agree:
 
