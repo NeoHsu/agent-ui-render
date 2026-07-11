@@ -30,66 +30,70 @@ function repeatCount(repeat: unknown): number {
 	return Array.isArray(repeated) ? repeated.length : 1;
 }
 
+function sizeConcatSpec(spec: VegaLiteSpec, width: number): void {
+	const horizontal = Array.isArray(spec.hconcat) ? spec.hconcat : null;
+	const vertical = Array.isArray(spec.vconcat) ? spec.vconcat : null;
+	const children = horizontal ?? vertical ?? [];
+	const childWidth = horizontal
+		? Math.max(
+				240,
+				(width - 28 * Math.max(children.length - 1, 0)) /
+					Math.max(children.length, 1),
+			)
+		: width;
+	for (const child of children) {
+		if (child && typeof child === "object") {
+			sizeUnitSpec(child as VegaLiteSpec, childWidth, 300);
+		}
+	}
+}
+
+function sizeFacetSpec(spec: VegaLiteSpec, width: number): void {
+	const child = spec.spec;
+	if (!child || typeof child !== "object") return;
+	const facet = spec.facet as Record<string, unknown> | undefined;
+	const childWidth = facet?.column
+		? Math.min(300, width)
+		: Math.max(320, width - 120);
+	sizeUnitSpec(child as VegaLiteSpec, childWidth, 260);
+}
+
+function sizeRepeatSpec(spec: VegaLiteSpec, width: number): void {
+	const child = spec.spec;
+	if (!child || typeof child !== "object") return;
+	const count = repeatCount(spec.repeat);
+	const childWidth = Math.max(
+		220,
+		Math.min(340, (width - 24 * (count - 1)) / count),
+	);
+	sizeUnitSpec(child as VegaLiteSpec, childWidth, 260);
+}
+
+function sizeSingleSpec(
+	spec: VegaLiteSpec,
+	chartType: string,
+	width: number,
+): void {
+	const circular = ["pie", "donut", "radial"].includes(chartType);
+	const tall = ["parallel-coordinates", "ternary"].includes(chartType);
+	let height = 300;
+	if (circular) height = 340;
+	else if (tall) height = 360;
+	sizeUnitSpec(spec, circular ? Math.min(width, 480) : width, height);
+}
+
 export function sizeVegaSpec(
 	source: VegaLiteSpec,
 	chartType: string,
 	containerWidth: number,
 ): VegaLiteSpec {
-	const spec = structuredClone(source);
+	const { title: _chartTitle, ...spec } = structuredClone(source);
 	const width = Math.max(280, containerWidth - 8);
 
-	if (chartType === "concat") {
-		const horizontal = Array.isArray(spec.hconcat) ? spec.hconcat : null;
-		const vertical = Array.isArray(spec.vconcat) ? spec.vconcat : null;
-		const children = horizontal ?? vertical ?? [];
-		const childWidth = horizontal
-			? Math.max(
-					240,
-					(width - 28 * Math.max(children.length - 1, 0)) /
-						Math.max(children.length, 1),
-				)
-			: width;
-		for (const child of children) {
-			if (child && typeof child === "object") {
-				sizeUnitSpec(child as VegaLiteSpec, childWidth, 300);
-			}
-		}
-		return spec;
-	}
-
-	if (chartType === "facet") {
-		const child = spec.spec;
-		if (child && typeof child === "object") {
-			const facet = spec.facet as Record<string, unknown> | undefined;
-			const childWidth = facet?.column
-				? Math.min(300, width)
-				: Math.max(320, width - 120);
-			sizeUnitSpec(child as VegaLiteSpec, childWidth, 260);
-		}
-		return spec;
-	}
-
-	if (chartType === "repeat") {
-		const child = spec.spec;
-		if (child && typeof child === "object") {
-			const count = repeatCount(spec.repeat);
-			const childWidth = Math.max(
-				220,
-				Math.min(340, (width - 24 * (count - 1)) / count),
-			);
-			sizeUnitSpec(child as VegaLiteSpec, childWidth, 260);
-		}
-		return spec;
-	}
-
-	const circular = ["pie", "donut", "radial"].includes(chartType);
-	let height = 300;
-	if (circular) {
-		height = 340;
-	} else if (["parallel-coordinates", "ternary"].includes(chartType)) {
-		height = 360;
-	}
-	sizeUnitSpec(spec, circular ? Math.min(width, 480) : width, height);
+	if (chartType === "concat") sizeConcatSpec(spec, width);
+	else if (chartType === "facet") sizeFacetSpec(spec, width);
+	else if (chartType === "repeat") sizeRepeatSpec(spec, width);
+	else sizeSingleSpec(spec, chartType, width);
 	return spec;
 }
 
@@ -100,21 +104,17 @@ export type ChartInteraction = {
 };
 
 const interactions: Record<string, ChartInteraction> = {
-	agent_hover: { mode: "hover", label: "Hover to inspect", resettable: false },
+	agent_hover: { mode: "hover", label: "Point to inspect", resettable: false },
 	agent_select: {
 		mode: "click",
-		label: "Click marks to select",
+		label: "Select a mark",
 		resettable: true,
 	},
-	agent_brush: { mode: "brush", label: "Drag to brush", resettable: true },
-	agent_zoom: {
-		mode: "zoom",
-		label: "Drag or scroll to zoom",
-		resettable: true,
-	},
+	agent_brush: { mode: "brush", label: "Drag to select", resettable: true },
+	agent_zoom: { mode: "zoom", label: "Drag to zoom", resettable: true },
 	agent_legend: {
 		mode: "legend",
-		label: "Click legend items",
+		label: "Select a series",
 		resettable: true,
 	},
 };

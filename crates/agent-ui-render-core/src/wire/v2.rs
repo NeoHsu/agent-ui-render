@@ -888,8 +888,8 @@ fn parallel_spec(
         .map(|index| column(dataset, *index).map(|item| item.key.clone()))
         .collect::<Result<Vec<_>, _>>()?;
     let mut encoding = json!({
-        "x": {"field": "__dimension", "type": "nominal"},
-        "y": {"field": "__value", "type": "quantitative"},
+        "x": {"field": "__dimension", "type": "nominal", "title": "Dimension"},
+        "y": {"field": "__value", "type": "quantitative", "title": "Value"},
         "detail": {"field": "__row", "type": "nominal"}
     });
     if let Some(color) = color {
@@ -1177,7 +1177,7 @@ fn multi_measure_encoding(
             .collect::<Result<Vec<_>, _>>()?;
         encoding.insert(
             "y".to_owned(),
-            json!({"field": "__value", "type": "quantitative"}),
+            json!({"field": "__value", "type": "quantitative", "title": "Value"}),
         );
         encoding.insert(
             "color".to_owned(),
@@ -1379,7 +1379,7 @@ fn add_selection_highlight(spec: &mut Value, param: &str) {
             encoding.entry("opacity".to_owned()).or_insert_with(|| {
                 json!({
                     "condition": {"param": param, "value": 1.0, "empty": true},
-                    "value": 0.22
+                    "value": 0.4
                 })
             });
         }

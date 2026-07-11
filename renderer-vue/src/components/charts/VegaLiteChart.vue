@@ -14,6 +14,8 @@ import {
 } from "../../chart-data.js";
 import { useVegaLiteView } from "../../composables/useVegaLiteView.js";
 import type { Dataset, VegaLiteSpec } from "../../types.js";
+import ChartInteractionBar from "./ChartInteractionBar.vue";
+import ChartTooltip from "./ChartTooltip.vue";
 
 const props = defineProps<{
   spec: VegaLiteSpec;
@@ -55,10 +57,21 @@ const hydratedSpec = computed(
       props.datasets,
     ) as unknown as TopLevelSpec,
 );
-const { error, tooltip, resetInteraction } = useVegaLiteView(host, hydratedSpec);
-const tooltipStyle = computed(() => ({
-  left: `${tooltip.value.x}px`,
-  top: `${tooltip.value.y}px`,
+const { error, interactionActive, tooltip, resetInteraction } = useVegaLiteView(
+  host,
+  hydratedSpec,
+);
+const showHoverGuide = computed(
+  () =>
+    tooltip.value.visible &&
+    ["line", "trail", "regression", "area", "errorband"].includes(
+      props.chartType,
+    ),
+);
+const hoverGuideStyle = computed(() => ({
+  left: `${tooltip.value.anchorX}px`,
+  top: `${host.value?.offsetTop ?? 0}px`,
+  height: `${host.value?.clientHeight ?? 0}px`,
 }));
 </script>
 
@@ -68,17 +81,12 @@ const tooltipStyle = computed(() => ({
     :data-interaction="interaction?.mode"
     @keydown.esc="resetInteraction()"
   >
-    <div v-if="interaction" class="chart-interaction-bar">
-      <span class="chart-interaction-hint">{{ interaction.label }}</span>
-      <button
-        v-if="interaction.resettable"
-        type="button"
-        class="chart-reset-button"
-        @click="resetInteraction()"
-      >
-        Reset
-      </button>
-    </div>
+    <ChartInteractionBar
+      v-if="interaction"
+      :interaction="interaction"
+      :active="interactionActive"
+      @reset="resetInteraction()"
+    />
     <div
       ref="host"
       class="vega-chart"
@@ -87,20 +95,12 @@ const tooltipStyle = computed(() => ({
       :aria-label="chartLabel"
     />
     <div
-      v-if="tooltip.visible"
-      class="chart-tooltip"
-      role="tooltip"
-      :style="tooltipStyle"
-    >
-      <div
-        v-for="(entry, index) in tooltip.entries"
-        :key="`${entry.label}-${index}`"
-        class="chart-tooltip-row"
-      >
-        <span class="chart-tooltip-label">{{ entry.label }}</span>
-        <strong class="chart-tooltip-value">{{ entry.value }}</strong>
-      </div>
-    </div>
+      v-if="showHoverGuide"
+      class="chart-hover-guide"
+      :style="hoverGuideStyle"
+      aria-hidden="true"
+    />
+    <ChartTooltip :state="tooltip" />
     <p v-if="error" class="empty chart-render-error" role="alert">
       Unable to render this chart: {{ error }}
     </p>

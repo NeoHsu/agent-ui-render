@@ -221,7 +221,7 @@ fn compact_v2_covers_non_geo_non_image_chart_families() -> Result<(), Box<dyn Er
                 chart_spec["encoding"]["opacity"]["condition"]["param"],
                 name
             );
-            assert_eq!(chart_spec["encoding"]["opacity"]["value"], 0.22);
+            assert_eq!(chart_spec["encoding"]["opacity"]["value"], 0.4);
         }
     }
     assert_eq!(

@@ -37,8 +37,25 @@ export type VegaTooltipState = {
 	visible: boolean;
 	x: number;
 	y: number;
-	entries: VegaTooltipEntry[];
+	anchorX: number;
+	anchorY: number;
+	title: string | null;
+	color: string | null;
+	entries: readonly VegaTooltipEntry[];
 };
+
+function emptyTooltipState(): VegaTooltipState {
+	return {
+		visible: false,
+		x: 0,
+		y: 0,
+		anchorX: 0,
+		anchorY: 0,
+		title: null,
+		color: null,
+		entries: [],
+	};
+}
 
 function displayValue(value: unknown): string {
 	if (value === null || value === undefined) return "—";
@@ -76,27 +93,62 @@ function ariaTooltipEntries(label: string): VegaTooltipEntry[] {
 	});
 }
 
+function tooltipContent(entries: VegaTooltipEntry[]): {
+	title: string | null;
+	entries: VegaTooltipEntry[];
+} {
+	const titleEntry = entries.find(
+		(entry) => !/^(value|amount|count|measure|size)$/i.test(entry.label),
+	);
+	if (!titleEntry || entries.length === 1) return { title: null, entries };
+	return {
+		title: titleEntry.value,
+		entries: entries.filter((entry) => entry !== titleEntry),
+	};
+}
+
+function safeSceneColor(item: unknown): string | null {
+	if (!item || typeof item !== "object") return null;
+	const sceneItem = item as { fill?: unknown; stroke?: unknown };
+	for (const candidate of [sceneItem.fill, sceneItem.stroke]) {
+		if (
+			typeof candidate === "string" &&
+			(/^#[0-9a-f]{3,8}$/i.test(candidate) || /^rgba?\([\d\s,.%]+\)$/i.test(candidate))
+		) {
+			return candidate;
+		}
+	}
+	return null;
+}
+
 function createTooltipHandler(
 	host: Readonly<ShallowRef<HTMLElement | null>>,
 	tooltip: ShallowRef<VegaTooltipState>,
 ): TooltipHandler {
-	return (_handler, event, _item, value) => {
+	return (_handler, event, item, value) => {
 		const element = host.value;
 		if (!element || value === null || value === undefined) {
 			tooltip.value = { ...tooltip.value, visible: false };
 			return;
 		}
 		const bounds = element.getBoundingClientRect();
+		const anchorX = Math.max(0, Math.min(event.clientX - bounds.left, bounds.width));
+		const anchorY = Math.max(0, Math.min(event.clientY - bounds.top, bounds.height));
+		const content = tooltipContent(tooltipEntries(value));
 		tooltip.value = {
 			visible: true,
 			x:
 				element.offsetLeft +
 				Math.min(
-					Math.max(12, event.clientX - bounds.left + 14),
+					Math.max(12, anchorX + 14),
 					Math.max(12, bounds.width - 260),
 				),
-			y: element.offsetTop + Math.max(12, event.clientY - bounds.top + 14),
-			entries: tooltipEntries(value),
+			y: element.offsetTop + Math.max(12, anchorY + 14),
+			anchorX: element.offsetLeft + anchorX,
+			anchorY: element.offsetTop + anchorY,
+			title: content.title,
+			color: safeSceneColor(item),
+			entries: content.entries,
 		};
 	};
 }
@@ -162,6 +214,9 @@ function showFocusedMark(
 	if (!label) return;
 	const hostBounds = element.getBoundingClientRect();
 	const markBounds = mark.getBoundingClientRect();
+	const anchorX = markBounds.left - hostBounds.left + markBounds.width / 2;
+	const anchorY = markBounds.top - hostBounds.top + markBounds.height / 2;
+	const content = tooltipContent(ariaTooltipEntries(label));
 	tooltip.value = {
 		visible: true,
 		x:
@@ -171,8 +226,67 @@ function showFocusedMark(
 				Math.max(12, hostBounds.width - 260),
 			),
 		y: element.offsetTop + Math.max(12, markBounds.top - hostBounds.top),
-		entries: ariaTooltipEntries(label),
+		anchorX: element.offsetLeft + anchorX,
+		anchorY: element.offsetTop + anchorY,
+		title: content.title,
+		color: safeSceneColor({
+			fill: mark.getAttribute("fill"),
+			stroke: mark.getAttribute("stroke"),
+		}),
+		entries: content.entries,
 	};
+}
+
+const persistentInteractionSignals = new Set([
+	"agent_select",
+	"agent_brush",
+	"agent_zoom",
+	"agent_legend",
+]);
+
+function interactionSignalNames(spec: VegaSpec): string[] {
+	const signals = (spec as { signals?: Array<{ name?: unknown }> }).signals ?? [];
+	return signals
+		.map((signal) => signal.name)
+		.filter(
+			(name): name is string =>
+				typeof name === "string" && persistentInteractionSignals.has(name),
+		);
+}
+
+function interactionValueIsActive(value: unknown): boolean {
+	if (value === null || value === undefined) return false;
+	if (Array.isArray(value)) return value.length > 0;
+	if (typeof value !== "object") return Boolean(value);
+	return Object.values(value).some((item) =>
+		Array.isArray(item)
+			? item.length > 0 && item[0] !== item[1]
+			: item !== null && item !== undefined,
+	);
+}
+
+function compileTrustedSpec(spec: TopLevelSpec, element: HTMLElement): VegaSpec {
+	return compile(spec, { config: vegaTheme(element) }).spec as VegaSpec;
+}
+
+function createTrustedView(
+	compiled: VegaSpec,
+	element: HTMLElement,
+	tooltip: TooltipHandler,
+	onInteraction: (active: boolean) => void,
+): View {
+	const view = new View(parse(compiled), {
+		renderer: "svg",
+		loader: rejectingLoader,
+		hover: true,
+		tooltip,
+	}).initialize(element);
+	for (const name of interactionSignalNames(compiled)) {
+		view.addSignalListener(name, (_signal, value) => {
+			onInteraction(interactionValueIsActive(value));
+		});
+	}
+	return view;
 }
 
 function installKeyboardInteractions(
@@ -216,12 +330,8 @@ export function useVegaLiteView(
 ) {
 	const activeView = shallowRef<View | null>(null);
 	const error = shallowRef<string | null>(null);
-	const tooltip = shallowRef<VegaTooltipState>({
-		visible: false,
-		x: 0,
-		y: 0,
-		entries: [],
-	});
+	const interactionActive = shallowRef(false);
+	const tooltip = shallowRef<VegaTooltipState>(emptyTooltipState());
 	let generation = 0;
 	let removeKeyboardInteractions: (() => void) | null = null;
 
@@ -234,20 +344,21 @@ export function useVegaLiteView(
 		activeView.value?.finalize();
 		activeView.value = null;
 		error.value = null;
+		interactionActive.value = false;
 		tooltip.value = { ...tooltip.value, visible: false };
 		await nextTick();
 		if (!host.value || currentGeneration !== generation) return;
 
 		try {
-			const compiled = compile(spec.value, {
-				config: vegaTheme(host.value),
-			}).spec as VegaSpec;
-			const view = new View(parse(compiled), {
-				renderer: "svg",
-				loader: rejectingLoader,
-				hover: true,
-				tooltip: handleTooltip,
-			}).initialize(host.value);
+			const compiled = compileTrustedSpec(spec.value, host.value);
+			const view = createTrustedView(
+				compiled,
+				host.value,
+				handleTooltip,
+				(active) => {
+					interactionActive.value = active;
+				},
+			);
 			activeView.value = view;
 			await view.runAsync();
 			if (currentGeneration !== generation) {
@@ -283,6 +394,7 @@ export function useVegaLiteView(
 
 	return {
 		error: readonly(error),
+		interactionActive: readonly(interactionActive),
 		tooltip: readonly(tooltip),
 		rerender: render,
 		resetInteraction,

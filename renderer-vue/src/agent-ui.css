@@ -61,7 +61,18 @@ body.agent-ui-standalone[data-theme="executive-clean"] {
 	--agent-pre-border: #cbd5e1;
 	--agent-chart-bg: #f8fafc;
 	--agent-chart-border: #dbeafe;
+	--agent-chart-grid: #e2e8f0;
 	--agent-chart-axis: #94a3b8;
+	--agent-chart-radius: 14px;
+	--agent-chart-control-bg: #ffffff;
+	--agent-chart-control-hover: #eff6ff;
+	--agent-chart-tooltip-bg: #0f172a;
+	--agent-chart-tooltip-border: #334155;
+	--agent-chart-tooltip-text: #f8fafc;
+	--agent-chart-tooltip-muted: #cbd5e1;
+	--agent-chart-guide: #2563eb;
+	--agent-chart-focus-ring: rgb(37 99 235 / 26%);
+	--agent-chart-motion-fast: 160ms;
 	--agent-series-1: #1d4ed8;
 	--agent-series-2: #0f766e;
 	--agent-series-3: #b45309;
@@ -136,7 +147,16 @@ body.agent-ui-standalone[data-theme="executive-clean"] {
 	--agent-pre-border: #374151;
 	--agent-chart-bg: #11161d;
 	--agent-chart-border: #2a3440;
+	--agent-chart-grid: #252f3b;
 	--agent-chart-axis: #64748b;
+	--agent-chart-control-bg: #151a21;
+	--agent-chart-control-hover: #1b2633;
+	--agent-chart-tooltip-bg: #f3f4f6;
+	--agent-chart-tooltip-border: #ffffff;
+	--agent-chart-tooltip-text: #111827;
+	--agent-chart-tooltip-muted: #475569;
+	--agent-chart-guide: #60a5fa;
+	--agent-chart-focus-ring: rgb(96 165 250 / 32%);
 	--agent-series-1: #60a5fa;
 	--agent-series-2: #34d399;
 	--agent-series-3: #f59e0b;
@@ -1193,44 +1213,100 @@ body.agent-ui-standalone[data-theme="executive-clean"] {
 	position: relative;
 	width: 100%;
 	min-width: 0;
+	padding: 10px 12px 12px;
+	border: 1px solid var(--agent-chart-border);
+	border-radius: var(--agent-chart-radius);
+	background: var(--agent-chart-bg);
+	transition:
+		border-color var(--agent-chart-motion-fast) ease,
+		box-shadow var(--agent-chart-motion-fast) ease;
+}
+
+.agent-ui-render .vega-chart-shell:focus-within {
+	border-color: color-mix(in srgb, var(--agent-primary) 60%, var(--agent-chart-border));
+	box-shadow: 0 0 0 3px var(--agent-chart-focus-ring);
 }
 
 .agent-ui-render .chart-interaction-bar {
-	min-height: 30px;
+	min-height: 32px;
 	display: flex;
 	align-items: center;
-	justify-content: flex-end;
-	gap: 10px;
-	margin-bottom: 4px;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 0 2px 6px;
+}
+
+.agent-ui-render .chart-interaction-status {
+	display: inline-flex;
+	align-items: center;
+	gap: 7px;
+	min-width: 0;
+}
+
+.agent-ui-render .chart-interaction-indicator {
+	width: 7px;
+	height: 7px;
+	flex: 0 0 auto;
+	border-radius: 50%;
+	background: var(--agent-primary);
+	box-shadow: 0 0 0 4px var(--agent-chart-focus-ring);
+}
+
+.agent-ui-render .chart-interaction-bar[data-mode="brush"] .chart-interaction-indicator,
+.agent-ui-render .chart-interaction-bar[data-mode="zoom"] .chart-interaction-indicator {
+	border-radius: 2px;
+}
+
+.agent-ui-render .chart-interaction-bar[data-active="true"] .chart-interaction-indicator {
+	background: var(--agent-success);
+	box-shadow: 0 0 0 4px color-mix(in srgb, var(--agent-success) 20%, transparent);
+}
+
+.agent-ui-render .chart-interaction-bar[data-active="true"] .chart-interaction-hint {
+	color: var(--agent-text);
 }
 
 .agent-ui-render .chart-interaction-hint {
 	color: var(--agent-muted);
-	font-size: 0.78rem;
+	font-size: 0.76rem;
+	font-weight: 600;
+	letter-spacing: 0.01em;
 }
 
 .agent-ui-render .chart-reset-button {
+	min-height: 28px;
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
 	appearance: none;
-	border: 1px solid var(--agent-border);
-	border-radius: 999px;
-	background: var(--agent-surface-muted);
-	color: var(--agent-text);
-	padding: 4px 10px;
+	border: 1px solid var(--agent-chart-border);
+	border-radius: 8px;
+	background: var(--agent-chart-control-bg);
+	color: var(--agent-muted);
+	padding: 4px 9px;
 	font: inherit;
-	font-size: 0.75rem;
+	font-size: 0.72rem;
+	font-weight: 650;
 	cursor: pointer;
 	transition:
-		border-color 140ms ease,
-		background-color 140ms ease,
-		transform 140ms ease;
+		border-color var(--agent-chart-motion-fast) ease,
+		background-color var(--agent-chart-motion-fast) ease,
+		color var(--agent-chart-motion-fast) ease,
+		transform var(--agent-chart-motion-fast) ease;
 }
 
-.agent-ui-render .chart-reset-button:hover,
-.agent-ui-render .chart-reset-button:focus-visible {
+.agent-ui-render .chart-reset-button:hover:not(:disabled),
+.agent-ui-render .chart-reset-button:focus-visible:not(:disabled) {
 	border-color: var(--agent-primary);
-	background: var(--agent-surface-strong);
+	background: var(--agent-chart-control-hover);
+	color: var(--agent-primary);
 	transform: translateY(-1px);
 	outline: none;
+}
+
+.agent-ui-render .chart-reset-button:disabled {
+	cursor: default;
+	opacity: 0.42;
 }
 
 .agent-ui-render .vega-chart {
@@ -1245,7 +1321,7 @@ body.agent-ui-standalone[data-theme="executive-clean"] {
 
 .agent-ui-render .vega-chart:focus-visible {
 	border-radius: 10px;
-	box-shadow: 0 0 0 2px var(--agent-primary);
+	box-shadow: inset 0 0 0 1px var(--agent-chart-focus-ring);
 }
 
 .agent-ui-render .vega-chart-shell[data-interaction="brush"] .vega-chart {
@@ -1270,8 +1346,8 @@ body.agent-ui-standalone[data-theme="executive-clean"] {
 	cursor: pointer;
 	pointer-events: all;
 	transition:
-		opacity 140ms ease,
-		filter 140ms ease;
+		opacity var(--agent-chart-motion-fast) ease,
+		filter var(--agent-chart-motion-fast) ease;
 }
 
 .agent-ui-render .vega-chart g.role-mark > [role="graphics-symbol"]:hover,
@@ -1289,39 +1365,94 @@ body.agent-ui-standalone[data-theme="executive-clean"] {
 	outline: none;
 }
 
+.agent-ui-render .chart-hover-guide {
+	position: absolute;
+	z-index: 12;
+	width: 1px;
+	background: linear-gradient(
+		to bottom,
+		transparent 4%,
+		var(--agent-chart-guide) 16%,
+		var(--agent-chart-guide) 84%,
+		transparent 96%
+	);
+	opacity: 0.48;
+	pointer-events: none;
+	transform: translateX(-0.5px);
+}
+
 .agent-ui-render .chart-tooltip {
 	position: absolute;
 	z-index: 30;
 	width: max-content;
-	max-width: min(260px, calc(100% - 24px));
+	min-width: 156px;
+	max-width: min(280px, calc(100% - 24px));
 	display: grid;
-	gap: 5px;
-	padding: 10px 12px;
-	border: 1px solid var(--agent-border);
+	gap: 7px;
+	padding: 11px 12px;
+	border: 1px solid var(--agent-chart-tooltip-border);
 	border-radius: 10px;
-	background: var(--agent-surface-strong);
-	color: var(--agent-text);
-	box-shadow: 0 10px 24px rgb(15 23 42 / 20%);
-	font-size: 0.78rem;
+	background: var(--agent-chart-tooltip-bg);
+	color: var(--agent-chart-tooltip-text);
+	box-shadow: 0 14px 32px rgb(15 23 42 / 24%);
+	font-size: 0.76rem;
 	line-height: 1.35;
 	pointer-events: none;
 	transform: translateY(-4px);
+	animation: chart-tooltip-enter var(--agent-chart-motion-fast) ease-out;
+}
+
+.agent-ui-render .chart-tooltip-header {
+	display: flex;
+	align-items: center;
+	gap: 7px;
+	padding-bottom: 7px;
+	border-bottom: 1px solid color-mix(in srgb, var(--agent-chart-tooltip-text) 16%, transparent);
+}
+
+.agent-ui-render .chart-tooltip-swatch {
+	width: 9px;
+	height: 9px;
+	flex: 0 0 auto;
+	border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+	border-radius: 3px;
+}
+
+.agent-ui-render .chart-tooltip-title {
+	min-width: 0;
+	overflow: hidden;
+	font-size: 0.79rem;
+	font-weight: 700;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
 .agent-ui-render .chart-tooltip-row {
 	display: grid;
 	grid-template-columns: minmax(64px, auto) minmax(0, 1fr);
-	gap: 10px;
+	gap: 14px;
 }
 
 .agent-ui-render .chart-tooltip-label {
-	color: var(--agent-muted);
+	color: var(--agent-chart-tooltip-muted);
 }
 
 .agent-ui-render .chart-tooltip-value {
 	min-width: 0;
+	color: var(--agent-chart-tooltip-text);
 	text-align: right;
 	overflow-wrap: anywhere;
+}
+
+@keyframes chart-tooltip-enter {
+	from {
+		opacity: 0;
+		transform: translateY(0);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(-4px);
+	}
 }
 
 .agent-ui-render .chart-render-error {

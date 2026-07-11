@@ -93,13 +93,18 @@ const initial = await evaluate<{
 	toolbars: number;
 	resetButtons: number;
 	markTabStops: number;
+	nestedTitles: number;
 }>(`(() => ({
 	cards: document.querySelectorAll('[data-view-intent="chart"]').length,
 	svgs: document.querySelectorAll('.vega-chart svg').length,
 	errors: document.querySelectorAll('.chart-render-error').length,
 	toolbars: document.querySelectorAll('.chart-interaction-bar').length,
 	resetButtons: document.querySelectorAll('.chart-reset-button').length,
-	markTabStops: document.querySelectorAll('.vega-chart g.role-mark > [role="graphics-symbol"][tabindex="0"]').length
+	markTabStops: document.querySelectorAll('.vega-chart g.role-mark > [role="graphics-symbol"][tabindex="0"]').length,
+	nestedTitles: [...document.querySelectorAll('.view-card')].filter((card) => {
+		const title = card.querySelector(':scope > h2')?.textContent?.trim();
+		return [...card.querySelectorAll('.vega-chart .role-title-text')].some((item) => item.textContent?.trim() === title);
+	}).length
 }))()`);
 assert(initial.cards === 44, `expected 44 chart cards, got ${initial.cards}`);
 assert(initial.svgs === 44, `expected 44 SVG charts, got ${initial.svgs}`);
@@ -116,6 +121,7 @@ assert(
 	initial.markTabStops === 44,
 	"each chart should expose one roving mark tab stop",
 );
+assert(initial.nestedTitles === 0, "card titles should not be repeated inside plots");
 
 const tooltipPoint = await evaluate<{ x: number; y: number }>(`(() => {
 	const mark = document.querySelector('.vega-chart g.mark-symbol.role-mark > [role="graphics-symbol"]');
@@ -130,12 +136,21 @@ await send("Input.dispatchMouseEvent", {
 	y: tooltipPoint.y,
 });
 await wait(400);
-const tooltipText = await evaluate<string>(
-	"document.querySelector('.chart-tooltip')?.textContent?.trim() || ''",
-);
+const tooltipState = await evaluate<{
+	text: string;
+	header: boolean;
+	swatch: boolean;
+}>(`(() => {
+	const tooltip = document.querySelector('.chart-tooltip');
+	return {
+		text: tooltip?.textContent?.trim() || '',
+		header: Boolean(tooltip?.querySelector('.chart-tooltip-header')),
+		swatch: Boolean(tooltip?.querySelector('.chart-tooltip-swatch'))
+	};
+})()`);
 assert(
-	tooltipText.includes("Value"),
-	"pointer hover should display a formatted tooltip",
+	tooltipState.text.includes("Value") && tooltipState.header && tooltipState.swatch,
+	"pointer hover should display a structured tooltip with a series swatch",
 );
 
 await evaluate<void>(`(() => {
@@ -153,21 +168,33 @@ await send("Input.dispatchKeyEvent", {
 	code: "Enter",
 });
 await wait(400);
-const selectedBars = await evaluate<number>(`(() => {
+const selectedBars = await evaluate<{ dimmed: number; active: boolean }>(`(() => {
 	const card = [...document.querySelectorAll('.view-card')].find((item) => item.querySelector('h2')?.textContent.trim() === 'Grouped Bar');
-	return [...card.querySelectorAll('g.role-mark > [role="graphics-symbol"]')].filter((item) => item.getAttribute('opacity') === '0.22').length;
+	return {
+		dimmed: [...card.querySelectorAll('g.role-mark > [role="graphics-symbol"]')].filter((item) => item.getAttribute('opacity') === '0.4').length,
+		active: card.querySelector('.chart-interaction-bar')?.dataset.active === 'true' && !card.querySelector('.chart-reset-button')?.disabled
+	};
 })()`);
-assert(selectedBars > 0, "keyboard Enter should select a mark and dim peers");
+assert(
+	selectedBars.dimmed > 0 && selectedBars.active,
+	"keyboard Enter should activate selection controls and dim peers",
+);
 await evaluate<void>(`(() => {
 	const card = [...document.querySelectorAll('.view-card')].find((item) => item.querySelector('h2')?.textContent.trim() === 'Grouped Bar');
 	card.querySelector('.chart-reset-button').click();
 })()`);
 await wait(500);
-const resetBars = await evaluate<number>(`(() => {
+const resetBars = await evaluate<{ dimmed: number; active: boolean }>(`(() => {
 	const card = [...document.querySelectorAll('.view-card')].find((item) => item.querySelector('h2')?.textContent.trim() === 'Grouped Bar');
-	return [...card.querySelectorAll('g.role-mark > [role="graphics-symbol"]')].filter((item) => item.getAttribute('opacity') === '0.22').length;
+	return {
+		dimmed: [...card.querySelectorAll('g.role-mark > [role="graphics-symbol"]')].filter((item) => item.getAttribute('opacity') === '0.4').length,
+		active: card.querySelector('.chart-interaction-bar')?.dataset.active === 'true'
+	};
 })()`);
-assert(resetBars === 0, "Reset should clear click selection");
+assert(
+	resetBars.dimmed === 0 && !resetBars.active,
+	"Reset should clear click selection and control state",
+);
 
 await evaluate<void>(`(() => {
 	const card = [...document.querySelectorAll('.view-card')].find((item) => item.querySelector('h2')?.textContent.trim() === 'Density');
@@ -186,7 +213,7 @@ await send("Input.dispatchKeyEvent", {
 await wait(400);
 const legendDimmed = await evaluate<number>(`(() => {
 	const card = [...document.querySelectorAll('.view-card')].find((item) => item.querySelector('h2')?.textContent.trim() === 'Density');
-	return [...card.querySelectorAll('g.role-mark > [role="graphics-symbol"]')].filter((item) => item.getAttribute('opacity') === '0.22').length;
+	return [...card.querySelectorAll('g.role-mark > [role="graphics-symbol"]')].filter((item) => item.getAttribute('opacity') === '0.4').length;
 })()`);
 assert(legendDimmed > 0, "legend selection should dim unselected series");
 
@@ -235,7 +262,7 @@ await wait(400);
 const brushState = await evaluate<{ dimmed: number; total: number }>(`(() => {
 	const card = [...document.querySelectorAll('.view-card')].find((item) => item.querySelector('h2')?.textContent.trim() === 'Brush Scatter');
 	const marks = [...card.querySelectorAll('g.role-mark > [role="graphics-symbol"]')];
-	return {dimmed: marks.filter((item) => item.getAttribute('opacity') === '0.22').length, total: marks.length};
+	return {dimmed: marks.filter((item) => item.getAttribute('opacity') === '0.4').length, total: marks.length};
 })()`);
 assert(
 	brushState.dimmed > 0 && brushState.dimmed < brushState.total,
