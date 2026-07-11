@@ -31,6 +31,7 @@ jobs:
           bun install --frozen-lockfile
           bun run typecheck
           bun run build
+          bun audit
       - name: Ensure generated renderer assets are committed
         run: git diff --exit-code generated/ renderer-vue/src/
       - name: Install cargo-audit
@@ -39,6 +40,8 @@ jobs:
       - run: cargo fmt --all -- --check
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo test --workspace
+      - name: Browser interaction smoke
+        run: ./scripts/interaction-smoke.sh
       - name: Check CLI reference docs against --help output
         run: ./scripts/check-cli-docs.sh
       - name: Release binary smoke verification

@@ -7,7 +7,7 @@ dir = "renderer-vue"
 run = "bun install && bun run typecheck && bun run build"
 
 [tasks.audit]
-run = "cargo audit"
+run = ["cargo audit", "cd renderer-vue && bun audit"]
 
 [tasks.verify-release]
 depends = ["vue-build"]
@@ -17,6 +17,7 @@ run = "./scripts/verify-release.sh"
 depends = ["vue-build"]
 run = [
   "cargo audit",
+  "cd renderer-vue && bun audit",
   "cargo fmt --all -- --check",
   "cargo clippy --workspace --all-targets -- -D warnings",
   "cargo test --workspace",

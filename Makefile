@@ -1,9 +1,9 @@
 .DEFAULT_GOAL := help
 
-.PHONY: help setup dev generate typecheck lint test audit docs-check check verify-release visual-smoke clean
+.PHONY: help setup dev generate typecheck lint test audit docs-check check verify-release visual-smoke interaction-smoke clean
 
 help: ## Show available project commands.
-	@awk 'BEGIN {FS = ":.*##"} /^[a-zA-Z0-9_-]+:.*##/ {printf "%-16s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@awk 'BEGIN {FS = ":.*##"} /^[a-zA-Z0-9_-]+:.*##/ {printf "%-16s %s\n", $$1, $$2}' "$(firstword $(MAKEFILE_LIST))"
 
 setup: ## Install development dependencies for the Vue renderer.
 	@echo "If tools are missing, run: mise install"
@@ -26,20 +26,24 @@ lint: typecheck ## Run formatting and clippy checks.
 test: generate ## Run Rust tests after embedded assets are current.
 	cargo test --workspace
 
-audit: ## Run cargo dependency advisory checks.
+audit: ## Run Rust and renderer dependency advisory checks.
 	@command -v cargo-audit >/dev/null 2>&1 || { echo "cargo-audit not found. Install with: cargo install cargo-audit --locked"; exit 127; }
 	cargo audit
+	(cd renderer-vue && bun audit)
 
 docs-check: ## Check docs/cli-reference.md against the CLI --help output.
 	./scripts/check-cli-docs.sh
 
-check: generate audit lint test docs-check verify-release ## Run the full local release-quality check suite.
+check: generate audit lint test docs-check verify-release interaction-smoke ## Run the full local release-quality check suite.
 
 verify-release: generate ## Run release binary smoke verification.
 	./scripts/verify-release.sh
 
 visual-smoke: generate ## Build visual smoke HTML artifacts under target/visual-smoke/.
 	./scripts/visual-smoke.sh
+
+interaction-smoke: ## Exercise rich chart interactions in headless Chrome.
+	./scripts/interaction-smoke.sh
 
 clean: ## Remove Rust and visual smoke build artifacts.
 	cargo clean
