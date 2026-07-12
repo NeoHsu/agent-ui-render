@@ -134,7 +134,8 @@ Dictionary values normalize back to strings.
       [["source", "s"], ["status", "dict:status"]],
       [["Deploy log", 0], ["Trace sample", 1], ["Database check", 2]]
     ]
-  ]
+  ],
+  "v": [["r", 0]]
 }
 ```
 

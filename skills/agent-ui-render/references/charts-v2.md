@@ -14,7 +14,9 @@ renderer only: never author raw Vega-Lite JSON.
 - Image, isotype, `geoshape`, and every geographic chart are unsupported.
 
 Notation: `D` dataset index, `X/Y` column index, `Ys` measure indexes, `C`
-group/color index, `S` size index, `O` options.
+group/color index, `S` size index, `O` options. Every other named
+`: number` parameter (`width`, `task`, `start`, `end`, `open`, and so on) is
+also a zero-based column index, never a literal value.
 
 ## Chart tuples
 
