@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-.PHONY: help setup dev generate typecheck lint test audit docs-check check verify-release visual-smoke interaction-smoke clean
+.PHONY: help setup dev generate typecheck lint test audit docs-check examples-check check verify-release visual-smoke interaction-smoke clean
 
 help: ## Show available project commands.
 	@awk 'BEGIN {FS = ":.*##"} /^[a-zA-Z0-9_-]+:.*##/ {printf "%-16s %s\n", $$1, $$2}' "$(firstword $(MAKEFILE_LIST))"
@@ -34,7 +34,10 @@ audit: ## Run Rust and renderer dependency advisory checks.
 docs-check: ## Check docs/cli-reference.md against the CLI --help output.
 	./scripts/check-cli-docs.sh
 
-check: generate audit lint test docs-check verify-release interaction-smoke ## Run the full local release-quality check suite.
+examples-check: ## Validate markdown payload examples in docs/ and skills/ against the CLI.
+	./scripts/check-doc-examples.sh
+
+check: generate audit lint test docs-check examples-check verify-release interaction-smoke ## Run the full local release-quality check suite.
 
 verify-release: generate ## Run release binary smoke verification.
 	./scripts/verify-release.sh

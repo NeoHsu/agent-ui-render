@@ -21,6 +21,8 @@ make typecheck      run Vue and Rust type checks
 make lint           run typecheck, rustfmt check, and clippy
 make test           build assets and run Rust tests
 make audit          run Cargo and Bun dependency audits
+make docs-check     check docs/cli-reference.md against CLI --help output
+make examples-check validate markdown payload examples against the CLI
 make check          run release-quality local checks
 make verify-release run release binary smoke verification
 make visual-smoke   build visual smoke artifacts

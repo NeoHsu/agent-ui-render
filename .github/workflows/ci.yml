@@ -46,3 +46,5 @@ jobs:
         run: ./scripts/check-cli-docs.sh
       - name: Release binary smoke verification
         run: ./scripts/verify-release.sh
+      - name: Validate markdown payload examples against the CLI
+        run: ./scripts/check-doc-examples.sh
