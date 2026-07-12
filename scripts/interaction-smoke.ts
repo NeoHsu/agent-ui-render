@@ -175,7 +175,10 @@ assert(
 	initial.resetButtons === 0,
 	`expected reset controls to stay hidden until active, got ${initial.resetButtons}`,
 );
-assert(initial.zoomButtons === 2, "zoom charts should expose minus and plus controls");
+assert(
+	initial.zoomButtons === 2,
+	"zoom charts should expose minus and plus controls",
+);
 assert(
 	initial.markTabStops === 44,
 	"each chart should expose one roving mark tab stop",
@@ -192,7 +195,10 @@ assert(
 	initial.trailXAxisLabels > 0 && initial.trailXAxisLabels <= 8,
 	`Trail x-axis should stay readable, got ${initial.trailXAxisLabels} labels`,
 );
-assert(initial.chartShellBorder === 0, "plot shell should not create a nested card frame");
+assert(
+	initial.chartShellBorder === 0,
+	"plot shell should not create a nested card frame",
+);
 assert(
 	initial.interactionPosition === "static",
 	"interaction controls should stay in the dedicated toolbar lane",
@@ -430,7 +436,10 @@ await evaluate<void>(`(() => {
 	card.querySelector('.chart-icon-button[aria-label="Zoom in"]').click();
 })()`);
 await wait(500);
-const programmaticZoomResult = await evaluate<{ brush: string; active: boolean }>(`(() => {
+const programmaticZoomResult = await evaluate<{
+	brush: string;
+	active: boolean;
+}>(`(() => {
 	const card = [...document.querySelectorAll('.view-card')].find((item) => item.querySelector('h2')?.textContent.trim() === 'Zoomable Line');
 	return {
 		brush: card.querySelector('g.agent_zoom_brush > path').getAttribute('d'),
@@ -438,7 +447,8 @@ const programmaticZoomResult = await evaluate<{ brush: string; active: boolean }
 	};
 })()`);
 assert(
-	programmaticZoomResult.brush !== "M0,0h0v0h0Z" && programmaticZoomResult.active,
+	programmaticZoomResult.brush !== "M0,0h0v0h0Z" &&
+		programmaticZoomResult.active,
 	"zoom controls should create an interval and activate reset state",
 );
 await captureScreenshot("06-zoom-controls");
