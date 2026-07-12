@@ -1251,7 +1251,11 @@ body.agent-ui-standalone[data-theme="executive-clean"] {
 	padding: 4px 9px;
 	border: 1px solid var(--agent-chart-border);
 	border-radius: 8px;
-	background: color-mix(in srgb, var(--agent-chart-control-bg) 92%, transparent);
+	background: color-mix(
+		in srgb,
+		var(--agent-chart-control-bg) 92%,
+		transparent
+	);
 	box-shadow: 0 2px 8px rgb(15 23 42 / 7%);
 	backdrop-filter: blur(6px);
 }
@@ -1365,7 +1369,6 @@ body.agent-ui-standalone[data-theme="executive-clean"] {
 	transform: translateY(-1px);
 	outline: none;
 }
-
 
 .agent-ui-render .vega-chart {
 	width: 100%;
