@@ -191,6 +191,7 @@ fn normalize_layout(
                 "resolve": {"scale": {"color": option_string(options, "resolve").unwrap_or("shared")}}
             });
             add_title(&mut spec, option_string(options, "t"));
+            add_interaction(&mut spec, option_string(options, "sel"));
             Ok(chart_view(
                 "layer",
                 refs,
@@ -1388,11 +1389,36 @@ fn add_interaction(spec: &mut Value, selection: Option<&str>) {
         ),
         _ => return,
     };
-    if let Some(object) = spec.as_object_mut() {
-        object.insert("params".to_owned(), json!([param]));
-    }
+    insert_interaction_param(spec, param);
     if highlight {
         add_selection_highlight(spec, name);
+    }
+}
+
+// Selection params must live in a unit spec: placing them on a layered spec
+// makes the Vega-Lite compiler clone them into every layer, which produces
+// duplicate runtime signal names and aborts rendering.
+fn insert_interaction_param(spec: &mut Value, param: Value) {
+    let Some(object) = spec.as_object_mut() else {
+        return;
+    };
+    if let Some(first) = object
+        .get_mut("layer")
+        .and_then(Value::as_array_mut)
+        .and_then(|layers| layers.first_mut())
+    {
+        insert_interaction_param(first, param);
+        return;
+    }
+    if let Some(child) = object.get_mut("spec") {
+        insert_interaction_param(child, param);
+        return;
+    }
+    match object.get_mut("params").and_then(Value::as_array_mut) {
+        Some(params) => params.push(param),
+        None => {
+            object.insert("params".to_owned(), json!([param]));
+        }
     }
 }
 

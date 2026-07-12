@@ -168,15 +168,15 @@ assert(initial.cards === 44, `expected 44 chart cards, got ${initial.cards}`);
 assert(initial.svgs === 44, `expected 44 SVG charts, got ${initial.svgs}`);
 assert(initial.errors === 0, `expected no chart errors, got ${initial.errors}`);
 assert(
-	initial.toolbars === 5,
-	`expected 5 interaction toolbars, got ${initial.toolbars}`,
+	initial.toolbars === 8,
+	`expected 8 interaction toolbars, got ${initial.toolbars}`,
 );
 assert(
 	initial.resetButtons === 0,
 	`expected reset controls to stay hidden until active, got ${initial.resetButtons}`,
 );
 assert(
-	initial.zoomButtons === 2,
+	initial.zoomButtons === 4,
 	"zoom charts should expose minus and plus controls",
 );
 assert(

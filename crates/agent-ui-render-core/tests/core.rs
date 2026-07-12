@@ -282,10 +282,11 @@ fn compact_v2_covers_non_geo_non_image_chart_families() -> Result<(), Box<dyn Er
 
     let compile_script = format!(
         r#"
+import {{ parse }} from "vega";
 import {{ compile }} from "vega-lite";
 const report = {report};
 const charts = report.views.filter((view) => view.intent === "chart");
-for (const chart of charts) compile(chart.spec);
+for (const chart of charts) parse(compile(chart.spec).spec);
 console.log(charts.length);
 "#,
         report = serde_json::to_string(&normalized)?,
