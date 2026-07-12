@@ -86,9 +86,14 @@ method, caveats, confidence intervals, and reproducible harness.
 The same compact payload can render as different host-selected themes without
 asking the agent to rewrite the UI.
 
-| Executive Clean | Technical Dark |
-| --- | --- |
-| ![Executive Clean][shot-clean] | ![Technical Dark][shot-dark] |
+| Report Light | Executive Clean | Technical Dark |
+| --- | --- | --- |
+| ![Report Light][shot-light] | ![Executive Clean][shot-clean] | ![Technical Dark][shot-dark] |
+
+The showcase payload lives at
+`docs/assets/screenshots/markdown-brief.input.json`; regenerate any theme shot
+by switching its `theme` value, rendering HTML, and capturing a 1600x1800
+headless-browser screenshot.
 
 ## Install
 
@@ -361,6 +366,7 @@ Build/runtime architecture:
 - `docs/cli-reference.md` - command reference and exit codes.
 - `docs/compatibility.md` - versioning and contract-change policy.
 - `docs/charts-v2.md` - governed advanced chart coverage and v2 behavior.
+- `docs/components.md` - component catalog and presentation style reference.
 - `docs/security-model.md` - trust boundaries and unsafe-content rules.
 - `docs/renderer-development.md` - Vue renderer development and handoff bundle.
 - `docs/release.md` - release process and cargo-dist publishing flow.
@@ -374,5 +380,6 @@ Build/runtime architecture:
 [benchmark-token-mix]: docs/assets/benchmarks/token-composition.svg
 [benchmark-complexity]: docs/assets/benchmarks/output-savings-by-complexity.svg
 [benchmark-cost]: docs/assets/benchmarks/api-cost.svg
+[shot-light]: docs/assets/screenshots/markdown-brief-report-light.png
 [shot-clean]: docs/assets/screenshots/markdown-brief-executive-clean.png
 [shot-dark]: docs/assets/screenshots/markdown-brief-technical-dark.png

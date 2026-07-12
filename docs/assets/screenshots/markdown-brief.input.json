@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "t": "Executive Launch Brief",
+  "s": "Markdown-first Agent UI artifact that turns agent analysis into an executive brief, then supports it with composition, comparison, and records views.",
+  "theme": "report-light",
+  "a": [
+    ["s", "Decision", "Keep the launch open and continue controlled scale-up for enterprise and paid search channels."],
+    ["w", "Follow-up", "APAC partner conversion remains below the target band and needs an owner update before the next checkpoint."]
+  ],
+  "m": [
+    ["Weighted Forecast", 1840000, "cur", "USD"],
+    ["Pipeline Coverage", "3.4 x", "s"],
+    ["Launch Conversion", 0.186, "pct"],
+    ["Open Actions", 7, "n"]
+  ],
+  "md": [
+    [
+      "Executive summary",
+      "### Recommendation\nKeep the launch window open. The strongest signal is {success: enterprise demand}, supported by improving paid search efficiency and stable activation. The main unresolved risk is {warning: APAC partner conversion}.\n\n> The artifact below is intentionally markdown-first: the agent writes concise analysis, while structured datasets render the visual evidence.\n\n### What matters now\n\n- **Commercial momentum:** pipeline coverage is above the operating threshold.\n- **Reliability:** checkout p95 is back inside the watch band after mitigation.\n- **Regional risk:** APAC needs partner follow-up before the next forecast refresh.\n\n### Decision rule\nProceed if conversion stays above `18%` and no critical checkout alert reappears during the next traffic peak."
+    ],
+    [
+      "Operator handoff",
+      "1. Route APAC partner follow-up to Sales before the next standup.\n2. Hold paid budget cap until conversion is stable for two checkpoints.\n3. Publish the executive forecast after Platform confirms p95 recovery.\n\n```text\nagent analysis -> compact payload -> validated renderer -> shareable HTML brief\n```"
+    ]
+  ],
+  "d": [
+    [
+      "pipeline_by_channel",
+      [["channel", "s"], ["pipeline", "cur", "USD"]],
+      [
+        ["Enterprise", 1120000],
+        ["Paid Search", 860000],
+        ["Partner", 540000],
+        ["Lifecycle", 410000],
+        ["Events", 270000]
+      ]
+    ],
+    [
+      "bookings_by_region",
+      [["region", "s"], ["bookings", "cur", "USD"]],
+      [
+        ["North America", 1320000],
+        ["EMEA", 910000],
+        ["APAC", 610000],
+        ["LATAM", 360000]
+      ]
+    ],
+    [
+      "action_plan",
+      [["action", "s"], ["owner", "s"], ["due", "d"], ["status", "s"]],
+      [
+        ["Confirm APAC partner enablement owner", "Sales", "2026-07-15", "in progress"],
+        ["Hold paid search budget cap", "Growth", "2026-07-16", "planned"],
+        ["Verify checkout p95 recovery", "Platform", "2026-07-14", "confirmed"],
+        ["Publish executive forecast", "Finance", "2026-07-17", "pending"]
+      ]
+    ]
+  ],
+  "v": [
+    ["p", 0, 0, [1]],
+    ["b", 1, 0, [1]],
+    ["r", 2]
+  ]
+}
