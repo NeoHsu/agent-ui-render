@@ -1,6 +1,6 @@
 [package]
 name = "agent-ui-render"
-version = "0.3.0"
+version = "0.4.0"
 description = "Zero-install Agent UI renderer CLI with a Rust core and embedded Vue renderer"
 edition.workspace = true
 license.workspace = true
