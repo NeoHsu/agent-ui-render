@@ -125,6 +125,8 @@ type CompactReport = {
   emphasis?: "strong" | "subtle";
   d?: DatasetTuple[];
   m?: MetricTuple[];
+  i?: string[];       // key insights
+  as?: string[];      // assumptions
   v?: ViewTuple[];
   a?: AlertTuple[];
   md?: MarkdownTuple[];
@@ -198,7 +200,9 @@ c critical
 3. Stay on version 1 for semantic `t`/`b`/`d`/`p`/`s`/`r` views. Switch to
    version 2 only when the requested chart needs an explicit opcode from
    `references/charts-v2.md`.
-4. Add metrics in `m`, concise summary in `s`, and caveats in `a`.
+4. Add metrics in `m` (an optional fifth tuple entry carries a
+   period-over-period delta), key takeaways in `i`, assumptions in `as`,
+   concise summary in `s`, and caveats in `a`.
 5. Choose a deliberate presentation profile unless the user or host already
    specifies one: use `technical-dark` for incident, reliability, and
    operational dashboards; `executive-clean` for finance and leadership briefs;

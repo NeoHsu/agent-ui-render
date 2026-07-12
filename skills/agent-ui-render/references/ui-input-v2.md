@@ -14,6 +14,8 @@ type CompactReportV2 = {
   emphasis?: "strong" | "subtle";
   d?: DatasetTuple[];
   m?: MetricTuple[];
+  i?: string[];
+  as?: string[];
   v?: ViewV2[];
   a?: AlertTuple[];
   md?: MarkdownTuple[];
@@ -21,8 +23,8 @@ type CompactReportV2 = {
 };
 ```
 
-Dataset, metric, alert, markdown, dictionary, theme, density, and emphasis
-shapes are unchanged from v1. Read `dataset.md` before shaping data and
+Dataset, metric, insight, assumption, alert, markdown, dictionary, theme,
+density, and emphasis shapes are unchanged from v1. Read `dataset.md` before shaping data and
 `charts-v2.md` before using a v2 chart opcode.
 
 ## Example

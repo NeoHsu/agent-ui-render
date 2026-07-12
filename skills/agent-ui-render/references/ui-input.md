@@ -28,6 +28,8 @@ type CompactReport = {
   emphasis?: "strong" | "subtle";
   d?: DatasetTuple[];                 // shared datasets
   m?: MetricTuple[];                  // metric tuples
+  i?: string[];                       // key insight strings
+  as?: string[];                      // assumption strings
   v?: ViewTuple[];                    // semantic view intent tuples
   a?: AlertTuple[];                   // alerts
   md?: MarkdownTuple[];               // safe markdown narrative sections
@@ -78,7 +80,11 @@ home copy) for its three unrelated meanings.
 type MetricTuple =
   | [label: string, value: Primitive]
   | [label: string, value: Primitive, format: TypeCode]
-  | [label: string, value: Primitive, format: TypeCode, unit: string];
+  | [label: string, value: Primitive, format: TypeCode, unit: string]
+  | [label: string, value: Primitive, format: TypeCode | null,
+     unit: string | null, delta: DeltaValue];
+
+type DeltaValue = number | [value: number, format: "n" | "pct"];
 ```
 
 Example:
@@ -86,6 +92,35 @@ Example:
 ```json
 "m": [["Latest Revenue", 150000, "cur", "USD"], ["Growth", 0.111, "pct"]]
 ```
+
+The optional fifth entry is a period-over-period delta. Use `null` to skip the
+format or unit positions when only the delta matters. Normalization derives the
+direction (`up`, `down`, `flat`) from the sign and a display label such as
+`+12.5%` (delta format `pct`) or `-3` (delta format `n` or bare number); metric
+cards render that label under the value.
+
+```json
+"m": [
+  ["Revenue", 135000, "cur", "USD", [0.125, "pct"]],
+  ["Open Bugs", 42, "n", null, -3]
+]
+```
+
+## Insights and assumptions
+
+`i` holds short, source-faithful key takeaway strings; the renderer shows them
+as a highlighted insight list before the views. `as` holds assumption strings;
+the renderer shows them as an assumptions checklist near the footer. Both are
+plain untrusted text — the same safety rules as every other payload string
+apply, and neither accepts markdown or tuples.
+
+```json
+"i": ["Revenue grew 12.5% month over month."],
+"as": ["February totals exclude returns."]
+```
+
+Use `i` for findings the data supports, `as` for conditions the analysis takes
+for granted, and alerts (`a`) for caveats that need a severity level.
 
 ## Markdown narrative sections
 
@@ -166,10 +201,11 @@ c critical
 
 Compact input is only the LLM output boundary. `agent-ui-render normalize`
 expands it into readable objects (`schema=ui.input.normalized`, `version: 1`):
-short keys become full names (`d` -> `datasets`, `v` -> `views`), indexes
-become keys, view codes become intents (`t` -> `trend`, `r` ->
-`precise_records`), type codes expand (`cur` -> `currency`), and labels are
-derived. You never author this form — run
+short keys become full names (`d` -> `datasets`, `v` -> `views`, `i` ->
+`insights`, `as` -> `assumptions`), indexes become keys, view codes become
+intents (`t` -> `trend`, `r` -> `precise_records`), type codes expand (`cur`
+-> `currency`), metric deltas gain derived `direction` and `label` fields, and
+labels are derived. You never author this form — run
 `agent-ui-render normalize <input.json> <normalized.json>` to inspect it when
 debugging.
 
