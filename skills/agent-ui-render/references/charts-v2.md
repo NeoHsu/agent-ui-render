@@ -90,6 +90,11 @@ Examples:
 Unknown options are validation errors. Not every option applies to every chart;
 use only options that express an actual requirement.
 
+`zero` keeps or drops the zero baseline on quantitative scales. Set
+`{"zero": false}` on `candle`, `err`, `band`, and `range` charts whenever the
+values cluster far from zero — the default zero baseline squashes the marks
+into an unreadable sliver.
+
 Rich HTML always provides structured SVG mark tooltips and pointer feedback.
 `sel` adds a visible governed interaction: `hover` emphasizes the nearest mark;
 `click`, `brush`, and `legend` dim unselected marks; `zoom` binds pan/zoom to
