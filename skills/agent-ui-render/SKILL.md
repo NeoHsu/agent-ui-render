@@ -134,6 +134,19 @@ type CompactReport = {
 };
 ```
 
+Every payload key maps to one renderable component; blocks render in this
+fixed order and absent keys are omitted entirely:
+
+| Key | Rendered component |
+| --- | --- |
+| `t`, `s` | header banner with title and summary |
+| `a` | level-colored alert cards (info/success/warning/error/critical) |
+| `m` | metric cards; optional fifth tuple entry shows a delta label |
+| `i` | "Key insights" bullet-list card |
+| `md` | markdown narrative cards (restricted subset, semantic tokens) |
+| `v` | tables and charts, per the view codes below |
+| `as` | muted "Assumptions and limitations" card near the footer |
+
 Use shared datasets under `d`; views reference datasets and columns by indexes.
 Do not output readable object-array rows, final chart specs, HTML, Vue, React,
 class names, style, arbitrary components, or action handlers.
