@@ -290,10 +290,12 @@ console.log(charts.length);
 "#,
         report = serde_json::to_string(&normalized)?,
     );
+    // Resolve vega-lite and its vega peer from the renderer's installed,
+    // lockfile-pinned node_modules; the workspace root has none in CI.
     let output = Command::new("bun")
         .arg("--eval")
         .arg(compile_script)
-        .current_dir(workspace_root()?)
+        .current_dir(workspace_root()?.join("renderer-vue"))
         .output()?;
     assert!(
         output.status.success(),
