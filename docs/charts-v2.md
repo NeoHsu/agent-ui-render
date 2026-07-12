@@ -5,6 +5,15 @@ project's small, governed, dataset-oriented authoring boundary. The Vue
 renderer uses Vega-Lite internally, but Vega-Lite JSON is never accepted as
 model-authored input.
 
+![Advanced chart gallery: histogram, boxplot, stacked area, heatmap, layered
+regression, and candlestick with interaction toolbars][gallery]
+
+The gallery payload lives at
+`docs/assets/screenshots/charts-v2-gallery.input.json`; re-render it and
+capture a 1600px-wide headless-browser screenshot to refresh this image.
+
+[gallery]: assets/screenshots/charts-v2-gallery.png
+
 ## Flow
 
 ```text

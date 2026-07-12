@@ -1,0 +1,69 @@
+{
+  "version": 2,
+  "t": "Advanced Chart Gallery",
+  "s": "Governed compact v2 chart families rendered by the trusted Vega-Lite runtime: no raw specs, no images, no maps.",
+  "theme": "technical-dark",
+  "density": "compact",
+  "d": [
+    [
+      "latency",
+      [["service", "s"], ["latency_ms", "n"]],
+      [
+        ["api", 142], ["api", 155], ["api", 168], ["api", 171], ["api", 182],
+        ["api", 188], ["api", 205], ["api", 231], ["api", 260], ["api", 322],
+        ["worker", 201], ["worker", 224], ["worker", 246], ["worker", 259],
+        ["worker", 275], ["worker", 288], ["worker", 311], ["worker", 340],
+        ["worker", 362], ["worker", 410]
+      ]
+    ],
+    [
+      "traffic",
+      [["day", "d"], ["organic", "n"], ["paid", "n"], ["referral", "n"]],
+      [
+        ["2026-06-01", 4200, 2600, 900],
+        ["2026-06-08", 4600, 2400, 1050],
+        ["2026-06-15", 5100, 2900, 1150],
+        ["2026-06-22", 4900, 3300, 1230],
+        ["2026-06-29", 5400, 3600, 1310],
+        ["2026-07-06", 5900, 3400, 1420]
+      ]
+    ],
+    [
+      "quality",
+      [["release", "s"], ["stage", "s"], ["defects", "n"]],
+      [
+        ["v0.1", "intake", 14], ["v0.1", "triage", 9], ["v0.1", "fixed", 22],
+        ["v0.2", "intake", 11], ["v0.2", "triage", 7], ["v0.2", "fixed", 26],
+        ["v0.3", "intake", 8], ["v0.3", "triage", 4], ["v0.3", "fixed", 31]
+      ]
+    ],
+    [
+      "scatter",
+      [["build_minutes", "n"], ["failure_rate", "pct"], ["team", "s"]],
+      [
+        [6, 0.021, "core"], [8, 0.028, "core"], [11, 0.041, "core"],
+        [13, 0.046, "core"], [7, 0.018, "infra"], [9, 0.026, "infra"],
+        [12, 0.039, "infra"], [15, 0.052, "infra"], [17, 0.058, "infra"]
+      ]
+    ],
+    [
+      "ohlc",
+      [["day", "d"], ["open", "n"], ["high", "n"], ["low", "n"], ["close", "n"]],
+      [
+        ["2026-07-06", 102, 109, 99, 107],
+        ["2026-07-07", 107, 112, 104, 105],
+        ["2026-07-08", 105, 111, 103, 110],
+        ["2026-07-09", 110, 118, 108, 116],
+        ["2026-07-10", 116, 117, 109, 111]
+      ]
+    ]
+  ],
+  "v": [
+    ["hist", 0, 1, {"t": "Latency histogram", "bn": 12}],
+    ["box", 0, 0, 1, {"t": "Latency by service"}],
+    ["ar", 1, 0, [1, 2, 3], {"t": "Weekly traffic, stacked", "st": "zero", "sel": "legend"}],
+    ["heat", 2, 0, 1, 2, {"t": "Defects by release and stage"}],
+    ["layer", [["sc", 3, 0, 1, 2], ["reg", 3, 0, 1, null, "linear"]], {"t": "Failure rate vs build time", "sel": "brush"}],
+    ["candle", 4, 0, 1, 2, 3, 4, {"t": "Deploy health index", "sel": "zoom", "zero": false}]
+  ]
+}

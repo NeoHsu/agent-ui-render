@@ -44,7 +44,7 @@ Both the rich preview (`render html`) and the static fallback
 | Bar chart | views `b`, `d` | Horizontal grouped bars by default; `b` switches to vertical grouped bars for 2–8 ordered time categories (dates, quarters, months, weeks, years) with unit-compatible measures. |
 | Pie chart | view `p` | Pie with legend for up to 5 positive categories; otherwise falls back to a bar chart. |
 | Scatter chart | view `s` | Point chart over two numeric columns. |
-| Advanced charts | v2 chart tuples | Vega-Lite SVG with a toolbar lane, structured tooltips, and optional `sel` interactions. See `docs/charts-v2.md`. |
+| Advanced charts | v2 chart tuples | Vega-Lite SVG with a toolbar lane, structured tooltips, and optional `sel` interactions. See `docs/charts-v2.md` for the tuple contract and a rendered gallery screenshot. |
 | Assumptions | `as` | A muted card titled "Assumptions and limitations" near the footer. |
 | Footer | none | Fixed one-line provenance note. |
 
