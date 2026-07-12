@@ -38,6 +38,14 @@
     "md": {
       "type": "array",
       "items": { "$ref": "#/$defs/markdownSection" }
+    },
+    "i": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "as": {
+      "type": "array",
+      "items": { "type": "string" }
     }
   },
   "$defs": {
@@ -125,12 +133,27 @@
     "metric": {
       "type": "array",
       "minItems": 2,
-      "maxItems": 4,
+      "maxItems": 5,
       "prefixItems": [
         { "type": "string", "minLength": 1 },
         { "$ref": "#/$defs/primitive" },
-        { "$ref": "#/$defs/typeCode" },
-        { "type": "string" }
+        { "anyOf": [{ "$ref": "#/$defs/typeCode" }, { "type": "null" }] },
+        { "type": ["string", "null"] },
+        { "$ref": "#/$defs/metricDelta" }
+      ]
+    },
+    "metricDelta": {
+      "oneOf": [
+        { "type": ["number", "null"] },
+        {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 2,
+          "prefixItems": [
+            { "type": "number" },
+            { "enum": ["n", "pct"] }
+          ]
+        }
       ]
     },
     "viewCode": { "enum": ["o", "r", "t", "b", "d", "p", "s"] },

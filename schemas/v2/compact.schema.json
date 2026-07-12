@@ -20,7 +20,9 @@
     "m": { "type": "array", "items": { "$ref": "#/$defs/metric" } },
     "v": { "type": "array", "items": { "$ref": "#/$defs/view" } },
     "a": { "type": "array", "items": { "$ref": "#/$defs/alert" } },
-    "md": { "type": "array", "items": { "$ref": "#/$defs/markdownSection" } }
+    "md": { "type": "array", "items": { "$ref": "#/$defs/markdownSection" } },
+    "i": { "type": "array", "items": { "type": "string" } },
+    "as": { "type": "array", "items": { "type": "string" } }
   },
   "$defs": {
     "primitive": { "type": ["string", "number", "boolean", "null"] },
@@ -82,12 +84,27 @@
     "metric": {
       "type": "array",
       "minItems": 2,
-      "maxItems": 4,
+      "maxItems": 5,
       "prefixItems": [
         { "type": "string", "minLength": 1 },
         { "$ref": "#/$defs/primitive" },
-        { "$ref": "#/$defs/typeCode" },
-        { "type": "string" }
+        { "anyOf": [{ "$ref": "#/$defs/typeCode" }, { "type": "null" }] },
+        { "type": ["string", "null"] },
+        { "$ref": "#/$defs/metricDelta" }
+      ]
+    },
+    "metricDelta": {
+      "oneOf": [
+        { "type": ["number", "null"] },
+        {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 2,
+          "prefixItems": [
+            { "type": "number" },
+            { "enum": ["n", "pct"] }
+          ]
+        }
       ]
     },
     "datasetIndex": { "type": "integer", "minimum": 0 },

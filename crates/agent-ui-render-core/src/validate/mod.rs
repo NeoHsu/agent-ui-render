@@ -94,6 +94,8 @@ fn validate_compact_report(value: &Value, limits: &Limits) -> ValidationReport {
     let datasets = validate_compact_datasets(object.get("d"), &dictionaries, limits, &mut report);
 
     validate_compact_metrics(object.get("m"), limits, &mut report);
+    validate_string_array("i", object.get("i"), limits, &mut report);
+    validate_string_array("as", object.get("as"), limits, &mut report);
     validate_compact_views(
         object.get("v"),
         version.unwrap_or(compact::VERSION),
@@ -809,8 +811,8 @@ fn validate_compact_metrics(value: Option<&Value>, limits: &Limits, report: &mut
             report.error(path, "metric must be a tuple array");
             continue;
         };
-        if !(2..=4).contains(&tuple.len()) {
-            report.error(path.clone(), "metric tuple must have 2 to 4 entries");
+        if !(2..=5).contains(&tuple.len()) {
+            report.error(path.clone(), "metric tuple must have 2 to 5 entries");
         }
         if let Some(label) = tuple.first().and_then(Value::as_str) {
             validate_string_length(
@@ -844,7 +846,7 @@ fn validate_compact_metrics(value: Option<&Value>, limits: &Limits, report: &mut
                 "metric value must be string, number, boolean, or null",
             );
         }
-        if let Some(format) = tuple.get(2) {
+        if let Some(format) = tuple.get(2).filter(|value| !value.is_null()) {
             if let Some(format) = format.as_str() {
                 validate_string_length(
                     format,
@@ -866,7 +868,7 @@ fn validate_compact_metrics(value: Option<&Value>, limits: &Limits, report: &mut
                 );
             }
         }
-        if let Some(unit) = tuple.get(3) {
+        if let Some(unit) = tuple.get(3).filter(|value| !value.is_null()) {
             if let Some(unit) = unit.as_str() {
                 validate_string_length(
                     unit,
@@ -882,6 +884,41 @@ fn validate_compact_metrics(value: Option<&Value>, limits: &Limits, report: &mut
                 );
             }
         }
+        if let Some(delta) = tuple.get(4).filter(|value| !value.is_null()) {
+            validate_compact_metric_delta(delta, &format!("{path}[4]"), report);
+        }
+    }
+}
+
+fn validate_compact_metric_delta(value: &Value, path: &str, report: &mut ValidationReport) {
+    if value.is_number() {
+        return;
+    }
+    let Some(tuple) = value.as_array() else {
+        report.error(
+            path.to_owned(),
+            "metric delta must be a number or a [value, format] tuple",
+        );
+        return;
+    };
+    if tuple.is_empty() || tuple.len() > 2 {
+        report.error(
+            path.to_owned(),
+            "metric delta tuple must have 1 or 2 entries",
+        );
+    }
+    if !tuple.first().is_some_and(Value::is_number) {
+        report.error(format!("{path}[0]"), "metric delta value must be a number");
+    }
+    if let Some(format) = tuple.get(1)
+        && !format
+            .as_str()
+            .is_some_and(|code| compact::DELTA_FORMAT_CODES.contains(&code))
+    {
+        report.error(
+            format!("{path}[1]"),
+            "metric delta format must be 'n' or 'pct'",
+        );
     }
 }
 

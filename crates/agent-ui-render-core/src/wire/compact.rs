@@ -5,13 +5,15 @@ use serde_json::Value;
 use crate::{
     diagnostic::{Finding, FindingLevel},
     domain::{
-        self, Alert, Column, Dataset, MarkdownSection, Metric, Primitive, Report, ViewIntent,
+        self, Alert, Column, Dataset, MarkdownSection, Metric, MetricDelta, Primitive, Report,
+        ViewIntent,
     },
 };
 
 pub const VERSION: u64 = 1;
 pub const TOP_LEVEL_KEYS: &[&str] = &[
-    "version", "t", "s", "theme", "density", "emphasis", "d", "m", "v", "a", "md", "dict",
+    "version", "t", "s", "theme", "density", "emphasis", "d", "m", "v", "a", "md", "dict", "i",
+    "as",
 ];
 
 pub const TYPE_CODE_STRING: &str = "s";
@@ -31,6 +33,7 @@ pub const BASE_TYPE_CODES: &[&str] = &[
     TYPE_CODE_DATETIME,
     TYPE_CODE_BOOLEAN,
 ];
+pub const DELTA_FORMAT_CODES: &[&str] = &[TYPE_CODE_NUMBER, TYPE_CODE_PERCENT];
 
 pub const VIEW_CODE_OVERVIEW: &str = "o";
 pub const VIEW_CODE_RECORDS: &str = "r";
@@ -209,6 +212,8 @@ pub fn normalize_compact_report(value: &Value) -> (Report, Vec<Finding>) {
     }
 
     input.metrics = normalize_compact_metrics(object.get("m"));
+    input.insights = normalize_compact_string_list(object.get("i"));
+    input.assumptions = normalize_compact_string_list(object.get("as"));
     input.markdown = normalize_compact_markdown(object.get("md"));
     input.views = normalize_compact_views(
         object.get("v"),
@@ -333,9 +338,68 @@ fn normalize_compact_metrics(value: Option<&Value>) -> Vec<Metric> {
                 value,
                 format,
                 unit,
-                delta: None,
+                delta: normalize_compact_metric_delta(tuple.get(4)),
             })
         })
+        .collect()
+}
+
+fn normalize_compact_metric_delta(value: Option<&Value>) -> Option<MetricDelta> {
+    let value = value?;
+    let (number, format_code) = if let Some(number) = value.as_f64() {
+        (number, None)
+    } else {
+        let tuple = value.as_array()?;
+        (
+            tuple.first()?.as_f64()?,
+            tuple.get(1).and_then(Value::as_str),
+        )
+    };
+    let format = format_code
+        .filter(|code| DELTA_FORMAT_CODES.contains(code))
+        .map(normalize_metric_format);
+    let direction = if number > 0.0 {
+        domain::DELTA_DIRECTION_UP
+    } else if number < 0.0 {
+        domain::DELTA_DIRECTION_DOWN
+    } else {
+        domain::DELTA_DIRECTION_FLAT
+    };
+    Some(MetricDelta {
+        label: Some(delta_label(number, format.as_deref())),
+        value: number,
+        format,
+        direction: Some(direction.to_owned()),
+    })
+}
+
+fn delta_label(value: f64, format: Option<&str>) -> String {
+    let magnitude = if format == Some(domain::COLUMN_TYPE_PERCENT) {
+        format!("{:.1}%", value.abs() * 100.0)
+    } else if value.abs().fract() < f64::EPSILON {
+        format!("{:.0}", value.abs())
+    } else {
+        format!("{:.2}", value.abs())
+            .trim_end_matches('0')
+            .trim_end_matches('.')
+            .to_owned()
+    };
+    if value > 0.0 {
+        format!("+{magnitude}")
+    } else if value < 0.0 {
+        format!("-{magnitude}")
+    } else {
+        magnitude
+    }
+}
+
+fn normalize_compact_string_list(value: Option<&Value>) -> Vec<String> {
+    value
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(Value::as_str)
+        .map(ToOwned::to_owned)
         .collect()
 }
 

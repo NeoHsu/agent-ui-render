@@ -49,6 +49,16 @@ pub const METRIC_FORMATS: &[&str] = &[
     COLUMN_TYPE_STRING,
 ];
 
+pub const DELTA_DIRECTION_UP: &str = "up";
+pub const DELTA_DIRECTION_DOWN: &str = "down";
+pub const DELTA_DIRECTION_FLAT: &str = "flat";
+pub const DELTA_DIRECTIONS: &[&str] = &[
+    DELTA_DIRECTION_UP,
+    DELTA_DIRECTION_DOWN,
+    DELTA_DIRECTION_FLAT,
+];
+pub const DELTA_FORMATS: &[&str] = &[COLUMN_TYPE_NUMBER, COLUMN_TYPE_PERCENT];
+
 pub const VIEW_INTENT_OVERVIEW: &str = "overview";
 pub const VIEW_INTENT_PRECISE_RECORDS: &str = "precise_records";
 pub const VIEW_INTENT_TREND: &str = "trend";

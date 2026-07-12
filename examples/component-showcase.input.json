@@ -12,10 +12,18 @@
     ["s", "Ready for handoff", "Tables, charts, metrics, alerts, markdown narrative, and actions are styled consistently."]
   ],
   "m": [
-    ["Impacted Requests", 12850, "n"],
-    ["Peak Error Rate", 0.034, "pct"],
-    ["MTTR", 42, "n", "min"],
+    ["Impacted Requests", 12850, "n", null, [3400, "n"]],
+    ["Peak Error Rate", 0.034, "pct", null, [0.03, "pct"]],
+    ["MTTR", 42, "n", "min", -8],
     ["Confidence", 0.82, "pct"]
+  ],
+  "i": [
+    "Config rollout at 10:09 UTC preceded the error spike by 11 minutes.",
+    "PG 13 datadir incompatibility is the confirmed root cause."
+  ],
+  "as": [
+    "Traffic mix is assumed stable across the incident window.",
+    "Customer ticket volume is treated as a lagging indicator."
   ],
   "md": [
     [

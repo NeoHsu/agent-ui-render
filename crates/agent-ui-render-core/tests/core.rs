@@ -330,6 +330,102 @@ fn compact_v2_rejects_excluded_and_raw_vega_capabilities() {
 }
 
 #[test]
+fn compact_insights_assumptions_and_metric_delta_flow() -> Result<(), Box<dyn Error>> {
+    let payload = json!({
+        "version": 1,
+        "t": "Narrative Extras",
+        "d": [[
+            "sales",
+            [["month", "s"], ["revenue", "cur", "USD"]],
+            [["Jan", 120000], ["Feb", 135000]]
+        ]],
+        "m": [
+            ["Revenue", 135000, "cur", "USD", [0.125, "pct"]],
+            ["Open Bugs", 42, "n", null, -3],
+            ["Coverage", 0.87, "pct", null, 0]
+        ],
+        "i": ["Revenue grew 12.5% month over month."],
+        "as": ["February totals exclude returns."],
+        "v": [["r", 0]]
+    });
+
+    let validation = validate_report(&payload);
+    assert!(validation.errors.is_empty(), "{:#?}", validation.errors);
+    assert!(validation.warnings.is_empty(), "{:#?}", validation.warnings);
+    let compact_validator = schema_validator(COMPACT_SCHEMA)?;
+    assert_schema_valid(&compact_validator, "compact narrative extras", &payload);
+
+    let normalized = normalize_report(&payload)?.input;
+    assert_eq!(
+        normalized.insights,
+        vec!["Revenue grew 12.5% month over month."]
+    );
+    assert_eq!(
+        normalized.assumptions,
+        vec!["February totals exclude returns."]
+    );
+    let delta = |index: usize| {
+        normalized.metrics[index]
+            .delta
+            .as_ref()
+            .ok_or_else(|| io::Error::other("metric delta should exist"))
+    };
+    let revenue = delta(0)?;
+    assert_eq!(revenue.label.as_deref(), Some("+12.5%"));
+    assert_eq!(
+        revenue.direction.as_deref(),
+        Some(domain::DELTA_DIRECTION_UP)
+    );
+    assert_eq!(revenue.format.as_deref(), Some("percent"));
+    let bugs = delta(1)?;
+    assert_eq!(bugs.label.as_deref(), Some("-3"));
+    assert_eq!(
+        bugs.direction.as_deref(),
+        Some(domain::DELTA_DIRECTION_DOWN)
+    );
+    assert_eq!(
+        delta(2)?.direction.as_deref(),
+        Some(domain::DELTA_DIRECTION_FLAT)
+    );
+
+    let normalized_value = serde_json::to_value(&normalized)?;
+    let normalized_validator = schema_validator(NORMALIZED_SCHEMA)?;
+    assert_schema_valid(
+        &normalized_validator,
+        "normalized narrative extras",
+        &normalized_value,
+    );
+
+    let spec = plan_ui_spec(&normalized);
+    let spec_validator = schema_validator(SPEC_SCHEMA)?;
+    assert_schema_valid(&spec_validator, "planned narrative extras", &spec);
+    let blocks = spec["blocks"]
+        .as_array()
+        .ok_or_else(|| io::Error::other("spec blocks should exist"))?;
+    assert!(
+        blocks
+            .iter()
+            .any(|block| block["type"] == "metric" && block["delta"]["label"] == "+12.5%")
+    );
+    assert!(blocks.iter().any(|block| block["variant"] == "insight"));
+    assert!(blocks.iter().any(|block| block["variant"] == "assumption"));
+
+    assert!(render_vue_html_shell(&normalized).contains("Revenue grew 12.5% month over month."));
+    let static_html = render_static_html(&normalized);
+    assert!(static_html.contains("Key insights"));
+    assert!(static_html.contains("Assumptions"));
+    assert!(static_html.contains("+12.5%"));
+
+    let bad_delta_format = json!({"version": 1, "m": [["A", 1, "n", null, [0.1, "cur"]]]});
+    assert!(!validate_report(&bad_delta_format).errors.is_empty());
+    let bad_delta_shape = json!({"version": 1, "m": [["A", 1, "n", null, "big"]]});
+    assert!(!validate_report(&bad_delta_shape).errors.is_empty());
+    let bad_insight = json!({"version": 1, "i": ["ok", 42]});
+    assert!(!validate_report(&bad_insight).errors.is_empty());
+    Ok(())
+}
+
+#[test]
 fn schema_enums_match_centralized_code_mappings() -> Result<(), Box<dyn Error>> {
     let compact_schema: Value = serde_json::from_str(COMPACT_SCHEMA)?;
     assert_eq!(
@@ -364,6 +460,21 @@ fn schema_enums_match_centralized_code_mappings() -> Result<(), Box<dyn Error>> 
         strings_at(&compact_schema, "/$defs/alert/prefixItems/0/enum"),
         compact::ALERT_LEVEL_CODES
     );
+    assert_eq!(
+        strings_at(
+            &compact_schema,
+            "/$defs/metricDelta/oneOf/1/prefixItems/1/enum"
+        ),
+        compact::DELTA_FORMAT_CODES
+    );
+    let compact_v2_schema: Value = serde_json::from_str(COMPACT_V2_SCHEMA)?;
+    assert_eq!(
+        strings_at(
+            &compact_v2_schema,
+            "/$defs/metricDelta/oneOf/1/prefixItems/1/enum"
+        ),
+        compact::DELTA_FORMAT_CODES
+    );
 
     let normalized_schema: Value = serde_json::from_str(NORMALIZED_SCHEMA)?;
     assert_eq!(
@@ -377,6 +488,20 @@ fn schema_enums_match_centralized_code_mappings() -> Result<(), Box<dyn Error>> 
     assert_eq!(
         strings_at(&normalized_schema, "/$defs/metric/properties/format/enum"),
         domain::METRIC_FORMATS
+    );
+    assert_eq!(
+        strings_at(
+            &normalized_schema,
+            "/$defs/metricDelta/properties/direction/enum"
+        ),
+        domain::DELTA_DIRECTIONS
+    );
+    assert_eq!(
+        strings_at(
+            &normalized_schema,
+            "/$defs/metricDelta/properties/format/enum"
+        ),
+        domain::DELTA_FORMATS
     );
     assert_eq!(
         strings_at(
