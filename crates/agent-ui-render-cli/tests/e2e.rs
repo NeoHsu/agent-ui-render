@@ -212,6 +212,33 @@ fn output_html_size_warning_can_be_enforced() -> Result<(), Box<dyn std::error::
     Ok(())
 }
 
+#[test]
+fn help_describes_version_preserving_v1_and_v2_pipeline() -> Result<(), Box<dyn std::error::Error>>
+{
+    for (command, expected) in [
+        (
+            "normalize",
+            "Normalize compact v1/v2 input to schema=ui.input.normalized while preserving its version",
+        ),
+        (
+            "plan",
+            "Plan compact v1/v2 input into schema=ui.spec while preserving its version",
+        ),
+    ] {
+        let output = Command::new(env!("CARGO_BIN_EXE_agent-ui-render"))
+            .args([command, "--help"])
+            .output()?;
+        assert!(output.status.success());
+        let help = String::from_utf8(output.stdout)?
+            .split_whitespace()
+            .collect::<Vec<_>>()
+            .join(" ");
+        assert!(help.contains(expected), "unexpected {command} help: {help}");
+        assert!(!help.contains("version=1"), "stale {command} help: {help}");
+    }
+    Ok(())
+}
+
 fn workspace_root() -> Result<PathBuf, io::Error> {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .parent()

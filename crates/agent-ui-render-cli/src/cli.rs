@@ -50,9 +50,9 @@ pub enum OutputFormat {
 pub enum Command {
     /// Validate an Agent UI input payload
     Validate(InputCommand),
-    /// Normalize compact input to schema=ui.input.normalized, version=1
+    /// Normalize compact v1/v2 input to schema=ui.input.normalized while preserving its version
     Normalize(IoCommand),
-    /// Plan compact input into schema=ui.spec, version=1
+    /// Plan compact v1/v2 input into schema=ui.spec while preserving its version
     Plan(IoCommand),
     /// Render previews and handoff artifacts
     Render(RenderCommand),
