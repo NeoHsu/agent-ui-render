@@ -8,8 +8,8 @@ use agent_ui_render_core::{
     Finding, FindingLevel, Report, RuntimeConfig, ValidationOptions, ValidationReport,
     normalize_report, plan_ui_spec,
     render::{
-        render_static_html_with_theme_tokens as render_static_html_document,
-        render_vue_html_shell_with_theme_tokens, render_vue_wrapper_with_theme_tokens,
+        render_static_html_with_theme_tokens_and_language as render_static_html_document,
+        render_vue_html_shell_with_theme_tokens_and_language, render_vue_wrapper_with_theme_tokens,
         vue_handoff_files,
     },
     validate_normalized_report_with_options, validate_report_with_options,
@@ -77,7 +77,11 @@ pub fn render_html(command: &RenderFileCommand, global: &GlobalArgs) -> anyhow::
         .apply_to_options(ValidationOptions::default());
     let payload = read_json(&command.input, options.limits.max_input_bytes)?;
     let normalized = validated_normalized_payload(&payload, global, &options)?;
-    let html = render_vue_html_shell_with_theme_tokens(&normalized, &config.theme_tokens);
+    let html = render_vue_html_shell_with_theme_tokens_and_language(
+        &normalized,
+        &config.theme_tokens,
+        config.document_language(),
+    );
     ensure_output_size(&command.output_path, &html, &options)?;
     warn_if_large_output(&command.output_path, &html, global, &options);
     atomic_write_text(&command.output_path, &html)?;
@@ -97,7 +101,11 @@ pub fn render_static_html(command: &RenderFileCommand, global: &GlobalArgs) -> a
         .apply_to_options(ValidationOptions::default());
     let payload = read_json(&command.input, options.limits.max_input_bytes)?;
     let normalized = validated_normalized_payload(&payload, global, &options)?;
-    let html = render_static_html_document(&normalized, &config.theme_tokens);
+    let html = render_static_html_document(
+        &normalized,
+        &config.theme_tokens,
+        config.document_language(),
+    );
     ensure_output_size(&command.output_path, &html, &options)?;
     warn_if_large_output(&command.output_path, &html, global, &options);
     atomic_write_text(&command.output_path, &html)?;

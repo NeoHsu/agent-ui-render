@@ -108,9 +108,17 @@ oversized or structurally invalid payloads. Render commands warn when generated
 HTML exceeds `warnOutputHtmlBytes`; with `--warnings-as-errors`, this blocks the
 command. Output above `maxOutputHtmlBytes` is always rejected before writing.
 
-Trusted config may also set `themeTokens` for renderer colors. Theme token values
-are validated as safe CSS color literals before render output is written; raw CSS
-remains outside the payload contract.
+Trusted config may also set `themeTokens` for renderer colors and
+`documentLanguage` for the generated HTML `lang` attribute. Theme token values
+are validated as safe CSS color literals, and document language is constrained
+to a safe BCP-47 shape before render output is written; raw CSS and HTML
+attributes remain outside the payload contract.
+
+Rich and static HTML include a hash-based CSP meta policy. Inline scripts and
+styles must match generated SHA-256 hashes, external connections are blocked,
+and object, base, form, and worker sources are disabled. The rich renderer keeps
+`'unsafe-eval'` only because Vega compiles trusted Rust-generated expressions;
+raw Vega expressions remain outside the payload contract.
 
 ## Release gates
 
@@ -164,5 +172,6 @@ in the final host job.
 ## Non-goals
 
 The renderer is not a sandbox for arbitrary UI code and does not execute payload
-scripts. Hosts embedding generated HTML should still serve it with appropriate
-CSP and origin isolation for their environment.
+scripts. Hosts embedding generated HTML should retain or strengthen the built-in
+CSP with an HTTP response header and use origin isolation appropriate to their
+environment.

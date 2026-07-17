@@ -1,3 +1,6 @@
+use base64::{Engine as _, engine::general_purpose::STANDARD};
+use sha2::{Digest, Sha256};
+
 use crate::{
     domain::Report,
     options::{ThemeTokens, is_safe_css_color_value},
@@ -181,12 +184,38 @@ pub fn render_theme_token_css(theme_tokens: &ThemeTokens) -> String {
 }
 
 pub(super) fn render_theme_token_style_block(theme_tokens: &ThemeTokens) -> String {
-    let css = render_theme_token_css(theme_tokens);
-    if css.is_empty() {
-        String::new()
+    theme_token_style_content(theme_tokens)
+        .map_or_else(String::new, |content| format!("\n<style>{content}</style>"))
+}
+
+pub(super) fn render_content_security_policy(script: Option<&str>, styles: &[&str]) -> String {
+    let script_source = script.map_or_else(
+        || "'none'".to_owned(),
+        // Vega compiles trusted Rust-generated expressions at runtime. Inline
+        // scripts remain hash-bound, while external loads stay disabled.
+        |source| format!("'sha256-{}' 'unsafe-eval'", content_hash(source)),
+    );
+    let style_source = if styles.is_empty() {
+        "'none'".to_owned()
     } else {
-        format!("\n<style>\n{css}</style>")
-    }
+        styles
+            .iter()
+            .map(|source| format!("'sha256-{}'", content_hash(source)))
+            .collect::<Vec<_>>()
+            .join(" ")
+    };
+    format!(
+        "default-src 'none'; script-src {script_source}; style-src {style_source}; img-src data:; font-src data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; worker-src 'none'"
+    )
+}
+
+pub(super) fn theme_token_style_content(theme_tokens: &ThemeTokens) -> Option<String> {
+    let css = render_theme_token_css(theme_tokens);
+    (!css.is_empty()).then(|| format!("\n{css}"))
+}
+
+fn content_hash(content: &str) -> String {
+    STANDARD.encode(Sha256::digest(content.as_bytes()))
 }
 
 fn token_value_is_safe(value: &Option<String>) -> bool {
@@ -221,7 +250,7 @@ const input = {payload} satisfies Report;
 
 #[must_use]
 pub fn render_vue_html_shell(input: &Report) -> String {
-    render_vue_html_shell_with_theme_tokens(input, &ThemeTokens::default())
+    render_vue_html_shell_with_theme_tokens_and_language(input, &ThemeTokens::default(), "en")
 }
 
 #[must_use]
@@ -229,15 +258,31 @@ pub fn render_vue_html_shell_with_theme_tokens(
     input: &Report,
     theme_tokens: &ThemeTokens,
 ) -> String {
+    render_vue_html_shell_with_theme_tokens_and_language(input, theme_tokens, "en")
+}
+
+#[must_use]
+pub fn render_vue_html_shell_with_theme_tokens_and_language(
+    input: &Report,
+    theme_tokens: &ThemeTokens,
+    document_language: &str,
+) -> String {
     let title = escape_html(input.title.as_deref().unwrap_or("Agent UI Report"));
     let payload = script_safe_json(input);
-    let token_style = render_theme_token_style_block(theme_tokens);
+    let token_style_content = theme_token_style_content(theme_tokens);
+    let token_style = token_style_content
+        .as_deref()
+        .map_or_else(String::new, |content| format!("\n<style>{content}</style>"));
+    let mut styles = vec![RENDERER_CSS];
+    styles.extend(token_style_content.as_deref());
+    let csp = render_content_security_policy(Some(RENDERER_JS), &styles);
     format!(
         r#"<!doctype html>
-<html lang="zh-Hant">
+<html lang="{document_language}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="{csp}">
 <title>{title}</title>
 <style>{css}</style>{token_style}
 </head>
@@ -252,5 +297,6 @@ pub fn render_vue_html_shell_with_theme_tokens(
         css = RENDERER_CSS,
         js = RENDERER_JS,
         theme = escape_html(input.theme.as_deref().unwrap_or("report-light")),
+        document_language = escape_html(document_language),
     )
 }

@@ -24,7 +24,7 @@ const columnCount = computed(() => Math.max(props.dataset.columns.length, 1));
 </script>
 
 <template>
-  <div class="table-wrap">
+  <div class="table-wrap" role="region" :aria-label="caption" tabindex="0">
     <table>
       <caption>
         {{ caption }}

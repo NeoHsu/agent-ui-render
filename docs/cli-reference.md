@@ -153,6 +153,7 @@ from the untrusted input payload.
 
 ```json
 {
+  "documentLanguage": "en",
   "limits": {
     "maxInputBytes": 5242880,
     "maxRowsPerDataset": 2000,
@@ -176,6 +177,9 @@ from the untrusted input payload.
   }
 }
 ```
+
+`documentLanguage` must be a safe BCP-47 language tag and defaults to `en`.
+It controls the `lang` attribute on generated rich and static HTML documents.
 
 `themeTokens` are emitted after the bundled renderer CSS for `render html`,
 `render static-html`, and `render vue`. Values must be safe CSS color literals:

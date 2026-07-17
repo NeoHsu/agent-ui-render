@@ -31,7 +31,12 @@ fi
 mkdir -p target/visual-smoke
 INPUT="${INTERACTION_INPUT:-examples/v2-chart-showcase.input.json}"
 HTML="${INTERACTION_HTML:-target/visual-smoke/v2-chart-showcase.html}"
-cargo run --quiet -- render html "$INPUT" "$HTML" >/dev/null
+CONFIG="${INTERACTION_CONFIG-scripts/fixtures/interaction.config.json}"
+CONFIG_ARGS=()
+if [[ -n "$CONFIG" ]]; then
+	CONFIG_ARGS+=(--config "$CONFIG")
+fi
+cargo run --quiet -- "${CONFIG_ARGS[@]}" render html "$INPUT" "$HTML" >/dev/null
 
 PORT="$({
 	python3 - <<'PY'
@@ -67,8 +72,11 @@ trap cleanup EXIT
 
 SCREENSHOT_ARGS=()
 if [[ -n "${INTERACTION_SCREENSHOT_DIR:-}" ]]; then
-	mkdir -p "$INTERACTION_SCREENSHOT_DIR"
-	SCREENSHOT_ARGS+=("$INTERACTION_SCREENSHOT_DIR")
+	if [[ "$INTERACTION_SCREENSHOT_DIR" != "target/visual-smoke/interactions" ]]; then
+		echo "INTERACTION_SCREENSHOT_DIR must be target/visual-smoke/interactions" >&2
+		exit 2
+	fi
+	SCREENSHOT_ARGS+=("capture")
 fi
 
 for _ in $(seq 1 100); do

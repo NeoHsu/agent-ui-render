@@ -3,6 +3,16 @@ use proptest::prelude::*;
 use super::*;
 
 #[test]
+fn document_language_accepts_and_canonicalizes_bcp47_tags() -> Result<(), Box<dyn Error>> {
+    assert_eq!(DocumentLanguage::new("EN-us")?.as_str(), "en-US");
+    assert_eq!(DocumentLanguage::new("zh-hant-tw")?.as_str(), "zh-Hant-TW");
+    assert_eq!(DocumentLanguage::new("x-agent-ui")?.as_str(), "x-agent-ui");
+    assert!(DocumentLanguage::new("en\"><script>bad()</script>").is_err());
+    assert!(DocumentLanguage::new("en_US").is_err());
+    Ok(())
+}
+
+#[test]
 fn markdown_renderer_escapes_or_drops_unsafe_inline_content() {
     let html = markdown_to_html(
         "# Safe\n\n<script>alert(1)</script> [bad](javascript:alert(1)) {warning: pending}",
@@ -181,9 +191,17 @@ fn renders_vue_and_static_html() -> Result<(), Box<dyn Error>> {
     assert!(vue_html.contains("agent-ui-root"));
     assert!(vue_html.contains("agent-ui-payload"));
     assert!(vue_html.contains("Revenue Overview"));
+    assert!(vue_html.contains("<html lang=\"en\">"));
+    assert!(vue_html.contains("http-equiv=\"Content-Security-Policy\""));
+    assert!(vue_html.contains("script-src 'sha256-"));
+    assert!(!vue_html.contains("'unsafe-inline'"));
 
     let static_html = render_static_html(&normalized);
     assert!(static_html.contains("Revenue Overview"));
     assert!(static_html.contains("<table>"));
+    assert!(static_html.contains("class=\"table-wrap\" role=\"region\""));
+    assert!(static_html.contains("<html lang=\"en\">"));
+    assert!(static_html.contains("script-src 'none'"));
+    assert!(static_html.contains("style-src 'sha256-"));
     Ok(())
 }

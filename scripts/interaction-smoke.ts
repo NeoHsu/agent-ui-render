@@ -1,11 +1,10 @@
 import { promises as fs } from "node:fs";
-import { join } from "node:path";
 
 const port = Number(process.argv[2]);
-const screenshotDirectory = process.argv[3];
+const captureScreenshots = process.argv[3] === "capture";
 if (!Number.isInteger(port) || port <= 0) {
 	throw new Error(
-		"Usage: bun scripts/interaction-smoke.ts <remote-debugging-port> [screenshot-directory]",
+		"Usage: bun scripts/interaction-smoke.ts <remote-debugging-port> [capture]",
 	);
 }
 
@@ -41,11 +40,15 @@ await new Promise<void>((resolve, reject) => {
 let nextId = 1;
 const pending = new Map<number, Pending>();
 const externalRequests: string[] = [];
+const contentSecurityPolicyErrors: string[] = [];
 socket.addEventListener("message", (event) => {
 	let message: CdpResult & {
 		id?: number;
 		method?: string;
-		params?: { request?: { url?: unknown } };
+		params?: {
+			request?: { url?: unknown };
+			entry?: { level?: unknown; text?: unknown };
+		};
 	};
 	try {
 		message = JSON.parse(String(event.data)) as typeof message;
@@ -56,6 +59,16 @@ socket.addEventListener("message", (event) => {
 		const url = message.params?.request?.url;
 		if (typeof url === "string" && /^https?:/i.test(url)) {
 			externalRequests.push(url);
+		}
+	}
+	if (message.method === "Log.entryAdded") {
+		const entry = message.params?.entry;
+		if (
+			entry?.level === "error" &&
+			typeof entry.text === "string" &&
+			/Content Security Policy|Refused to/i.test(entry.text)
+		) {
+			contentSecurityPolicyErrors.push(entry.text);
 		}
 	}
 	if (!message.id) return;
@@ -79,6 +92,7 @@ async function evaluate<T>(expression: string): Promise<T> {
 	const response = await send("Runtime.evaluate", {
 		expression,
 		returnByValue: true,
+		awaitPromise: true,
 	});
 	if (response.exceptionDetails) {
 		throw new Error(
@@ -96,24 +110,25 @@ async function wait(milliseconds: number): Promise<void> {
 	await new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
-async function captureScreenshot(name: string): Promise<void> {
-	if (!screenshotDirectory) return;
+async function captureScreenshot(): Promise<Uint8Array | undefined> {
+	if (!captureScreenshots) return undefined;
 	const response = await send("Page.captureScreenshot", {
 		format: "png",
 		fromSurface: true,
 		captureBeyondViewport: false,
 	});
 	const data = response.result?.data;
-	assert(data, `Chrome did not return screenshot data for ${name}`);
-	await fs.mkdir(screenshotDirectory, { recursive: true });
-	const bytes = Uint8Array.from(atob(data), (character) =>
-		character.charCodeAt(0),
-	);
-	await fs.writeFile(join(screenshotDirectory, `${name}.png`), bytes);
+	assert(data, "Chrome did not return screenshot data");
+	return Uint8Array.from(atob(data), (character) => character.charCodeAt(0));
+}
+
+if (captureScreenshots) {
+	await fs.mkdir("target/visual-smoke/interactions", { recursive: true });
 }
 
 await send("Page.enable");
 await send("Network.enable");
+await send("Log.enable");
 await wait(12_000);
 
 const initial = await evaluate<{
@@ -218,6 +233,34 @@ assert(
 	"interaction controls should not overlap chart legends",
 );
 
+const axeSource = await fs.readFile(
+	new URL("../renderer-vue/node_modules/axe-core/axe.min.js", import.meta.url),
+	"utf8",
+);
+await evaluate<void>(axeSource);
+const accessibilityViolations = await evaluate<
+	Array<{
+		id: string;
+		impact: string | null;
+		nodes: number;
+		targets: string[][];
+		html: string[];
+	}>
+>(`axe.run(document, { resultTypes: ['violations'] }).then((result) =>
+	result.violations
+		.filter((violation) => ['critical', 'serious'].includes(violation.impact))
+		.map((violation) => ({
+			id: violation.id,
+			impact: violation.impact,
+			nodes: violation.nodes.length,
+			targets: violation.nodes.slice(0, 12).map((node) => node.target),
+			html: violation.nodes.slice(0, 12).map((node) => node.html)
+		})))`);
+assert(
+	accessibilityViolations.length === 0,
+	`serious accessibility violations: ${JSON.stringify(accessibilityViolations)}`,
+);
+
 const tooltipPoint = await evaluate<{ x: number; y: number }>(`(() => {
 	const mark = document.querySelector('.vega-chart g.mark-symbol.role-mark > [role="graphics-symbol"]');
 	const rect = mark.getBoundingClientRect();
@@ -249,7 +292,15 @@ assert(
 		tooltipState.swatch,
 	"pointer hover should display a structured tooltip with a series swatch",
 );
-await captureScreenshot("01-tooltip");
+const tooltipScreenshot = await captureScreenshot();
+if (tooltipScreenshot) {
+	const file = await fs.open(
+		"target/visual-smoke/interactions/01-tooltip.png",
+		"w",
+	);
+	await file.writeFile(tooltipScreenshot);
+	await file.close();
+}
 
 await evaluate<void>(`(() => {
 	const card = [...document.querySelectorAll('.view-card')].find((item) => item.querySelector('h2')?.textContent.trim() === 'Grouped Bar');
@@ -280,7 +331,15 @@ assert(
 	selectedBars.dimmed > 0 && selectedBars.active,
 	"keyboard Enter should activate selection controls and dim peers",
 );
-await captureScreenshot("02-click-selection");
+const clickScreenshot = await captureScreenshot();
+if (clickScreenshot) {
+	const file = await fs.open(
+		"target/visual-smoke/interactions/02-click-selection.png",
+		"w",
+	);
+	await file.writeFile(clickScreenshot);
+	await file.close();
+}
 await evaluate<void>(`(() => {
 	const card = [...document.querySelectorAll('.view-card')].find((item) => item.querySelector('h2')?.textContent.trim() === 'Grouped Bar');
 	card.querySelector('.chart-reset-button').click();
@@ -318,7 +377,15 @@ const legendDimmed = await evaluate<number>(`(() => {
 	return [...card.querySelectorAll('g.role-mark > [role="graphics-symbol"]')].filter((item) => item.getAttribute('opacity') === '0.4').length;
 })()`);
 assert(legendDimmed > 0, "legend selection should dim unselected series");
-await captureScreenshot("03-legend-selection");
+const legendScreenshot = await captureScreenshot();
+if (legendScreenshot) {
+	const file = await fs.open(
+		"target/visual-smoke/interactions/03-legend-selection.png",
+		"w",
+	);
+	await file.writeFile(legendScreenshot);
+	await file.close();
+}
 
 const brush = await evaluate<{
 	x1: number;
@@ -371,7 +438,15 @@ assert(
 	brushState.dimmed > 0 && brushState.dimmed < brushState.total,
 	"brush should retain selected marks and dim peers",
 );
-await captureScreenshot("04-brush-selection");
+const brushScreenshot = await captureScreenshot();
+if (brushScreenshot) {
+	const file = await fs.open(
+		"target/visual-smoke/interactions/04-brush-selection.png",
+		"w",
+	);
+	await file.writeFile(brushScreenshot);
+	await file.close();
+}
 
 const zoom = await evaluate<{
 	x1: number;
@@ -423,7 +498,15 @@ assert(
 	zoomBrush !== "M0,0h0v0h0Z",
 	"zoom drag should create a bound scale interval",
 );
-await captureScreenshot("05-zoom");
+const zoomScreenshot = await captureScreenshot();
+if (zoomScreenshot) {
+	const file = await fs.open(
+		"target/visual-smoke/interactions/05-zoom.png",
+		"w",
+	);
+	await file.writeFile(zoomScreenshot);
+	await file.close();
+}
 await evaluate<void>(`(() => {
 	const card = [...document.querySelectorAll('.view-card')].find((item) => item.querySelector('h2')?.textContent.trim() === 'Zoomable Line');
 	card.querySelector('.chart-reset-button').click();
@@ -457,13 +540,25 @@ assert(
 		programmaticZoomResult.active,
 	"zoom controls should create an interval and activate reset state",
 );
-await captureScreenshot("06-zoom-controls");
+const zoomControlsScreenshot = await captureScreenshot();
+if (zoomControlsScreenshot) {
+	const file = await fs.open(
+		"target/visual-smoke/interactions/06-zoom-controls.png",
+		"w",
+	);
+	await file.writeFile(zoomControlsScreenshot);
+	await file.close();
+}
 
 assert(
 	externalRequests.length === 0,
 	`rich HTML attempted external network requests: ${externalRequests.join(", ")}`,
 );
+assert(
+	contentSecurityPolicyErrors.length === 0,
+	`rich HTML violated its CSP: ${contentSecurityPolicyErrors.join(" | ")}`,
+);
 process.stdout.write(
-	"interaction smoke OK: no-network, tooltip, keyboard, click, reset, legend, brush, zoom\n",
+	"interaction smoke OK: CSP, accessibility, no-network, tooltip, keyboard, click, reset, legend, brush, zoom\n",
 );
 socket.close();

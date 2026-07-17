@@ -348,11 +348,22 @@ async function zoomView(view: View, factor: number): Promise<void> {
 	await view.runAsync();
 }
 
+function hideDecorativeMarkContainers(element: HTMLElement): void {
+	Array.from(
+		element.querySelectorAll<SVGGElement>(
+			'g.role-mark[role="graphics-symbol"]:not([aria-label])',
+		),
+	)
+		.filter((container) => !container.querySelector("[aria-label], [tabindex]"))
+		.forEach((container) => container.setAttribute("aria-hidden", "true"));
+}
+
 function installKeyboardInteractions(
 	element: HTMLElement,
 	tooltip: ShallowRef<VegaTooltipState>,
 ): () => void {
 	enrichLegendMarks(element);
+	hideDecorativeMarkContainers(element);
 	const marks = Array.from(
 		element.querySelectorAll<SVGGraphicsElement>(
 			'g.role-mark > [role="graphics-symbol"], g.role-legend-symbol > [role="graphics-symbol"]',

@@ -166,6 +166,7 @@ agent-ui-render --config agent-ui-render.config.json render html input.json repo
 
 ```json
 {
+  "documentLanguage": "en",
   "limits": {
     "maxInputBytes": 5242880,
     "maxRowsPerDataset": 2000,
@@ -185,6 +186,10 @@ agent-ui-render --config agent-ui-render.config.json render html input.json repo
   }
 }
 ```
+
+`documentLanguage` is an optional safe BCP-47 tag used for the generated HTML
+`lang` attribute. It defaults to `en`; examples include `zh-Hant`, `en-US`, and
+`ja`.
 
 ## Common recovery path
 

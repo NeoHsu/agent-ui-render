@@ -33,11 +33,16 @@ make interaction-smoke exercise tooltip and selection UX in headless Chrome
 ```
 
 Capture the tooltip, click, legend, brush, and zoom states during that smoke
-run by setting an output directory:
+with the fixed, repository-local output directory:
 
 ```bash
 INTERACTION_SCREENSHOT_DIR=target/visual-smoke/interactions make interaction-smoke
 ```
+
+The interaction smoke uses `scripts/fixtures/interaction.config.json` by default
+so theme-token CSP hashes are exercised. Set `INTERACTION_CONFIG=` to test without
+a config, or point it at another trusted config. The smoke fails on serious or
+critical axe accessibility violations and on browser CSP errors.
 
 ## Documentation diagram style
 

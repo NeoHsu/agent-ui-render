@@ -7,7 +7,7 @@ use crate::{
 };
 
 use super::{
-    assets::{RENDERER_CSS, render_theme_token_style_block},
+    assets::{RENDERER_CSS, render_content_security_policy, theme_token_style_content},
     formatting::{
         class_token, escape_html, format_cell_value, format_metric, titleize_chart_name, view_title,
     },
@@ -16,19 +16,35 @@ use super::{
 
 #[must_use]
 pub fn render_static_html(input: &Report) -> String {
-    render_static_html_with_theme_tokens(input, &ThemeTokens::default())
+    render_static_html_with_theme_tokens_and_language(input, &ThemeTokens::default(), "en")
 }
 
 #[must_use]
 pub fn render_static_html_with_theme_tokens(input: &Report, theme_tokens: &ThemeTokens) -> String {
+    render_static_html_with_theme_tokens_and_language(input, theme_tokens, "en")
+}
+
+#[must_use]
+pub fn render_static_html_with_theme_tokens_and_language(
+    input: &Report,
+    theme_tokens: &ThemeTokens,
+    document_language: &str,
+) -> String {
     let title = escape_html(input.title.as_deref().unwrap_or("Agent UI Report"));
-    let token_style = render_theme_token_style_block(theme_tokens);
+    let token_style_content = theme_token_style_content(theme_tokens);
+    let token_style = token_style_content
+        .as_deref()
+        .map_or_else(String::new, |content| format!("\n<style>{content}</style>"));
+    let mut styles = vec![RENDERER_CSS];
+    styles.extend(token_style_content.as_deref());
+    let csp = render_content_security_policy(None, &styles);
     let mut parts = vec![
         "<!doctype html>".to_owned(),
-        "<html lang=\"zh-Hant\">".to_owned(),
+        format!("<html lang=\"{}\">", escape_html(document_language)),
         "<head>".to_owned(),
         "<meta charset=\"utf-8\">".to_owned(),
         "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">".to_owned(),
+        format!("<meta http-equiv=\"Content-Security-Policy\" content=\"{csp}\">"),
         format!("<title>{title}</title>"),
         format!("<style>{}</style>{token_style}", RENDERER_CSS),
         "</head>".to_owned(),
@@ -229,6 +245,7 @@ pub(super) fn render_table(dataset: &Dataset) -> String {
 }
 
 fn render_table_with_columns(dataset: &Dataset, columns: &[usize], caption: &str) -> String {
+    let caption = escape_html(caption);
     let headers = columns
         .iter()
         .filter_map(|index| dataset.columns.get(*index))
@@ -270,7 +287,6 @@ fn render_table_with_columns(dataset: &Dataset, columns: &[usize], caption: &str
             .join("\n")
     };
     format!(
-        "<div class=\"table-wrap\"><table><caption>{}</caption><thead><tr>{headers}</tr></thead><tbody>{body}</tbody></table></div>",
-        escape_html(caption)
+        "<div class=\"table-wrap\" role=\"region\" aria-label=\"{caption}\" tabindex=\"0\"><table><caption>{caption}</caption><thead><tr>{headers}</tr></thead><tbody>{body}</tbody></table></div>"
     )
 }

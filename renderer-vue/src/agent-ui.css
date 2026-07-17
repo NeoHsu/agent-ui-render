@@ -662,6 +662,11 @@ body.agent-ui-standalone[data-theme="executive-clean"] {
 	background: var(--agent-surface);
 }
 
+.agent-ui-render .table-wrap:focus-visible {
+	outline: 3px solid color-mix(in srgb, var(--agent-primary) 46%, transparent);
+	outline-offset: 3px;
+}
+
 .agent-ui-render table {
 	width: 100%;
 	min-width: 620px;

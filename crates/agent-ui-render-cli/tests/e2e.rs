@@ -166,7 +166,7 @@ fn theme_tokens_config_is_embedded_in_rendered_html() -> Result<(), Box<dyn std:
     let config = temp.path().join("agent-ui-render.config.json");
     fs::write(
         &config,
-        r##"{"themeTokens":{"page":"#0b1220","text":"#f9fafb","primary":"#8b5cf6","series1":"#06b6d4"}}"##,
+        r##"{"documentLanguage":"zh-Hant","themeTokens":{"page":"#0b1220","text":"#f9fafb","primary":"#8b5cf6","series1":"#06b6d4"}}"##,
     )?;
     let output = temp.path().join("report.static.html");
     let input = workspace_root()?.join("examples/revenue-overview.input.json");
@@ -184,6 +184,29 @@ fn theme_tokens_config_is_embedded_in_rendered_html() -> Result<(), Box<dyn std:
     assert!(html.contains("--agent-series-1: #06b6d4;"));
     assert!(html.contains("background: var(--agent-page);"));
     assert!(html.contains("color: var(--agent-text);"));
+    assert!(html.contains("<html lang=\"zh-Hant\">"));
+    assert!(html.contains("http-equiv=\"Content-Security-Policy\""));
+    Ok(())
+}
+
+#[test]
+fn unsafe_document_language_config_exits_nonzero() -> Result<(), Box<dyn std::error::Error>> {
+    let temp = tempfile::tempdir()?;
+    let config = temp.path().join("agent-ui-render.config.json");
+    fs::write(
+        &config,
+        r#"{"documentLanguage":"en\"><script>alert(1)</script>"}"#,
+    )?;
+    let input = workspace_root()?.join("examples/revenue-overview.input.json");
+    let output = Command::new(env!("CARGO_BIN_EXE_agent-ui-render"))
+        .arg("--config")
+        .arg(config)
+        .arg("validate")
+        .arg(input)
+        .output()?;
+
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("documentLanguage"));
     Ok(())
 }
 

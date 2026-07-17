@@ -1,5 +1,6 @@
 use std::{error::Error, fmt};
 
+use language_tags::LanguageTag;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -59,6 +60,54 @@ pub struct ValidationOptions {
     pub limits: Limits,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DocumentLanguage(String);
+
+impl DocumentLanguage {
+    pub fn new(value: impl Into<String>) -> Result<Self, DocumentLanguageValidationError> {
+        let value = value.into();
+        if value.len() > 255 {
+            return Err(DocumentLanguageValidationError { value });
+        }
+        LanguageTag::parse(&value)
+            .map(LanguageTag::into_string)
+            .map(Self)
+            .map_err(|_| DocumentLanguageValidationError { value })
+    }
+
+    #[must_use]
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+impl<'de> Deserialize<'de> for DocumentLanguage {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let value = String::deserialize(deserializer)?;
+        Self::new(value).map_err(serde::de::Error::custom)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DocumentLanguageValidationError {
+    value: String,
+}
+
+impl fmt::Display for DocumentLanguageValidationError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            formatter,
+            "documentLanguage must be a safe BCP-47 language tag, got {:?}",
+            self.value
+        )
+    }
+}
+
+impl Error for DocumentLanguageValidationError {}
+
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct RuntimeConfig {
@@ -66,9 +115,18 @@ pub struct RuntimeConfig {
     pub limits: LimitOverrides,
     #[serde(default)]
     pub theme_tokens: ThemeTokens,
+    #[serde(default)]
+    pub document_language: Option<DocumentLanguage>,
 }
 
 impl RuntimeConfig {
+    #[must_use]
+    pub fn document_language(&self) -> &str {
+        self.document_language
+            .as_ref()
+            .map_or("en", DocumentLanguage::as_str)
+    }
+
     #[must_use]
     pub fn apply_to_options(self, mut options: ValidationOptions) -> ValidationOptions {
         self.limits.apply_to(&mut options.limits);

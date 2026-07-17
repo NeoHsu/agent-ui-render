@@ -1,7 +1,7 @@
 use std::{collections::BTreeSet, error::Error, io, path::PathBuf, process::Command};
 
 use agent_ui_render_core::{
-    Limits, RuntimeConfig, ThemeTokens, ValidationOptions,
+    DocumentLanguage, Limits, RuntimeConfig, ThemeTokens, ValidationOptions,
     chart::{bar_orientation_for_view, chart_kind_for_view},
     domain, is_safe_css_color_value,
     markdown::markdown_to_html,

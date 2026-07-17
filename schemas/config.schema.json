@@ -30,12 +30,20 @@
         "maxOutputHtmlBytes": { "$ref": "#/$defs/nonNegativeInteger" }
       }
     },
-    "themeTokens": { "$ref": "#/$defs/themeTokens" }
+    "themeTokens": { "$ref": "#/$defs/themeTokens" },
+    "documentLanguage": { "$ref": "#/$defs/documentLanguage" }
   },
   "$defs": {
     "nonNegativeInteger": {
       "type": "integer",
       "minimum": 0
+    },
+    "documentLanguage": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 255,
+      "description": "RFC 5646 / BCP-47 language tag emitted on generated HTML documents; runtime validation is stricter than this safe-character precheck.",
+      "pattern": "^(?:[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*|[Xx](?:-[A-Za-z0-9]{1,8})+|[Ii](?:-[A-Za-z0-9]{1,8})+)$"
     },
     "cssColorToken": {
       "type": "string",

@@ -15,11 +15,14 @@ pub use domain::{
 };
 pub use normalize::{NormalizationResult, normalize_report};
 pub use options::{
-    LimitOverrides, Limits, RuntimeConfig, ThemeTokens, ValidationOptions, is_safe_css_color_value,
+    DocumentLanguage, DocumentLanguageValidationError, LimitOverrides, Limits, RuntimeConfig,
+    ThemeTokens, ValidationOptions, is_safe_css_color_value,
 };
 pub use render::{
-    render_static_html, render_static_html_with_theme_tokens, render_theme_token_css,
+    render_static_html, render_static_html_with_theme_tokens,
+    render_static_html_with_theme_tokens_and_language, render_theme_token_css,
     render_vue_html_shell, render_vue_html_shell_with_theme_tokens,
+    render_vue_html_shell_with_theme_tokens_and_language,
 };
 pub use spec::plan_ui_spec;
 pub use validate::{

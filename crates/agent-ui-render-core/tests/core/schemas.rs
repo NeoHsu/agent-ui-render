@@ -150,12 +150,16 @@ fn schema_enums_match_centralized_code_mappings() -> Result<(), Box<dyn Error>> 
         &config_validator,
         "theme token config",
         &json!({
+            "documentLanguage": "zh-Hant",
             "themeTokens": {
                 "primary": "#8b5cf6",
                 "series1": "oklch(62% 0.2 275)"
             }
         }),
     );
+    assert!(!config_validator.is_valid(&json!({
+        "documentLanguage": "en\"><script>bad()</script>"
+    })));
     let schema_theme_tokens = config_schema["$defs"]["themeTokens"]["properties"]
         .as_object()
         .ok_or_else(|| io::Error::other("config schema theme token properties should exist"))?

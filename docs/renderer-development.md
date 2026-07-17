@@ -71,8 +71,12 @@ Rust embeds these files through `include_str!`, so they must exist before
 - Version 2 Vega-Lite specs come from the trusted Rust planner. The Vue renderer
   only attaches normalized dataset rows and owns Vega View lifecycle cleanup.
 - Vega's loader must continue rejecting all external network/file resources.
+- Keep the generated HTML CSP hash-only for inline scripts/styles. Vega currently
+  requires `'unsafe-eval'` for trusted planner-generated expressions; do not add
+  `'unsafe-inline'` or external connection sources.
 - Keep focused unit and component coverage under `renderer-vue/tests`; browser-only
-  interactions remain in `scripts/interaction-smoke.ts`.
+  interactions and serious/critical axe accessibility checks remain in
+  `scripts/interaction-smoke.ts`.
 - Keep Rust static Markdown and Vue Markdown security behavior aligned through
   `fixtures/markdown-security.json`; add adversarial cases there before changing
   link or escaping policy.
