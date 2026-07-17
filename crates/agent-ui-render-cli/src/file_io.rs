@@ -40,6 +40,16 @@ pub fn replace_vue_handoff(
     files: &[(&str, &str)],
     force: bool,
 ) -> anyhow::Result<PathBuf> {
+    replace_vue_handoff_with_writer(output_path, wrapper, files, force, atomic_write_text)
+}
+
+fn replace_vue_handoff_with_writer(
+    output_path: &Path,
+    wrapper: &str,
+    files: &[(&str, &str)],
+    force: bool,
+    write_wrapper: impl FnOnce(&Path, &str) -> anyhow::Result<()>,
+) -> anyhow::Result<PathBuf> {
     ensure_parent_dir(output_path)?;
     let output_dir = parent_dir(output_path);
     let renderer_dir = output_dir.join("agent-ui-renderer");
@@ -93,7 +103,7 @@ pub fn replace_vue_handoff(
             .with_context(|| format!("failed to install renderer {}", renderer_dir.display()));
     }
 
-    if let Err(error) = atomic_write_text(output_path, wrapper) {
+    if let Err(error) = write_wrapper(output_path, wrapper) {
         let _ = fs::remove_dir_all(&renderer_dir);
         if had_existing {
             let _ = fs::rename(&backup, &renderer_dir);
@@ -327,20 +337,21 @@ mod tests {
     fn handoff_rollback_restores_previous_renderer() -> anyhow::Result<()> {
         let temp = tempfile::tempdir()?;
         let output = temp.path().join("Report.vue");
-        fs::create_dir(&output)?;
         let renderer = temp.path().join("agent-ui-renderer");
         fs::create_dir(&renderer)?;
         fs::write(renderer.join(HANDOFF_MARKER_NAME), HANDOFF_MARKER)?;
         fs::write(renderer.join("AgentUiRenderer.vue"), "old renderer")?;
 
-        let result = replace_vue_handoff(
+        let result = replace_vue_handoff_with_writer(
             &output,
             "new wrapper",
             &[("AgentUiRenderer.vue", "new renderer")],
             false,
+            |_, _| anyhow::bail!("injected wrapper failure"),
         );
 
         assert!(result.is_err());
+        assert!(!output.exists());
         assert_eq!(
             fs::read_to_string(renderer.join("AgentUiRenderer.vue"))?,
             "old renderer"
