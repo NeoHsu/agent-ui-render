@@ -30,6 +30,61 @@ fn renders_html_from_example() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[test]
+fn render_vue_refuses_to_delete_unmanaged_directory() -> Result<(), Box<dyn std::error::Error>> {
+    let temp = tempfile::tempdir()?;
+    let renderer_dir = temp.path().join("agent-ui-renderer");
+    fs::create_dir(&renderer_dir)?;
+    let sentinel = renderer_dir.join("custom.txt");
+    fs::write(&sentinel, "keep me")?;
+    let wrapper = temp.path().join("Report.vue");
+    let input = workspace_root()?.join("examples/revenue-overview.input.json");
+    let output = Command::new(env!("CARGO_BIN_EXE_agent-ui-render"))
+        .args(["render", "vue"])
+        .arg(input)
+        .arg(&wrapper)
+        .output()?;
+
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("unmanaged directory"));
+    assert_eq!(fs::read_to_string(sentinel)?, "keep me");
+    assert!(!wrapper.exists());
+    Ok(())
+}
+
+#[test]
+fn render_vue_force_replaces_unmanaged_directory() -> Result<(), Box<dyn std::error::Error>> {
+    let temp = tempfile::tempdir()?;
+    let renderer_dir = temp.path().join("agent-ui-renderer");
+    fs::create_dir(&renderer_dir)?;
+    fs::write(renderer_dir.join("custom.txt"), "replace me")?;
+    let wrapper = temp.path().join("Report.vue");
+    let input = workspace_root()?.join("examples/revenue-overview.input.json");
+    let status = Command::new(env!("CARGO_BIN_EXE_agent-ui-render"))
+        .args(["render", "vue"])
+        .arg(&input)
+        .arg(&wrapper)
+        .arg("--force")
+        .status()?;
+
+    assert!(status.success());
+    assert!(wrapper.is_file());
+    assert!(renderer_dir.join("AgentUiRenderer.vue").is_file());
+    assert!(renderer_dir.join(".agent-ui-render-managed").is_file());
+    assert!(!renderer_dir.join("custom.txt").exists());
+
+    let status = Command::new(env!("CARGO_BIN_EXE_agent-ui-render"))
+        .args(["render", "vue"])
+        .arg(&input)
+        .arg(&wrapper)
+        .status()?;
+    assert!(
+        status.success(),
+        "managed handoff should update without --force"
+    );
+    Ok(())
+}
+
+#[test]
 fn invalid_payload_exits_nonzero() -> Result<(), Box<dyn std::error::Error>> {
     let temp = tempfile::tempdir()?;
     let input = temp.path().join("bad.json");

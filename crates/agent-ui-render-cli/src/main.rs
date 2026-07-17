@@ -1,6 +1,7 @@
 mod cli;
 mod commands;
 mod error;
+mod file_io;
 mod output;
 
 use clap::{CommandFactory, Parser};

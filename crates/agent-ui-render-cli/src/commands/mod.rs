@@ -20,9 +20,10 @@ use serde_json::Value;
 use crate::{
     cli::{
         GlobalArgs, InputCommand, IoCommand, OutputFormat, RenderFileCommand, SchemaAction,
-        SchemaCommand, SchemaName,
+        SchemaCommand, SchemaName, VueRenderCommand,
     },
     error::{EXIT_RUNTIME, EXIT_WARNINGS_AS_ERRORS},
+    file_io::{atomic_write_text, replace_vue_handoff},
     output::{print_extra_warnings, print_findings, print_json, print_validation_result},
 };
 
@@ -79,7 +80,7 @@ pub fn render_html(command: &RenderFileCommand, global: &GlobalArgs) -> anyhow::
     let html = render_vue_html_shell_with_theme_tokens(&normalized, &config.theme_tokens);
     ensure_output_size(&command.output_path, &html, &options)?;
     warn_if_large_output(&command.output_path, &html, global, &options);
-    write_text_file(&command.output_path, &html)?;
+    atomic_write_text(&command.output_path, &html)?;
     if !global.quiet {
         eprintln!(
             "OK: wrote Vue client HTML to {}",
@@ -99,36 +100,26 @@ pub fn render_static_html(command: &RenderFileCommand, global: &GlobalArgs) -> a
     let html = render_static_html_document(&normalized, &config.theme_tokens);
     ensure_output_size(&command.output_path, &html, &options)?;
     warn_if_large_output(&command.output_path, &html, global, &options);
-    write_text_file(&command.output_path, &html)?;
+    atomic_write_text(&command.output_path, &html)?;
     if !global.quiet {
         eprintln!("OK: wrote static HTML to {}", command.output_path.display());
     }
     Ok(())
 }
 
-pub fn render_vue(command: &RenderFileCommand, global: &GlobalArgs) -> anyhow::Result<()> {
+pub fn render_vue(command: &VueRenderCommand, global: &GlobalArgs) -> anyhow::Result<()> {
     let config = runtime_config(global)?;
     let options = config
         .clone()
         .apply_to_options(ValidationOptions::default());
     let payload = read_json(&command.input, options.limits.max_input_bytes)?;
     let normalized = validated_normalized_payload(&payload, global, &options)?;
-    let output_dir = command
-        .output_path
-        .parent()
-        .unwrap_or_else(|| Path::new("."));
-    let renderer_dir = output_dir.join("agent-ui-renderer");
-    if renderer_dir.exists() {
-        fs::remove_dir_all(&renderer_dir)
-            .with_context(|| format!("failed to remove {}", renderer_dir.display()))?;
-    }
-    for (relative, content) in vue_handoff_files() {
-        let path = renderer_dir.join(relative);
-        write_text_file(&path, content)?;
-    }
-    write_text_file(
+    let wrapper = render_vue_wrapper_with_theme_tokens(&normalized, &config.theme_tokens);
+    let renderer_dir = replace_vue_handoff(
         &command.output_path,
-        &render_vue_wrapper_with_theme_tokens(&normalized, &config.theme_tokens),
+        &wrapper,
+        vue_handoff_files(),
+        command.force,
     )?;
     if !global.quiet {
         eprintln!(
@@ -298,24 +289,9 @@ fn write_json_or_stdout<T: serde::Serialize>(
         serde_json::to_string(value)?
     } + "\n";
     if let Some(path) = path {
-        write_text_file(path, &output)
+        atomic_write_text(path, &output)
     } else {
         print!("{output}");
         Ok(())
     }
-}
-
-fn write_text_file(path: &Path, content: &str) -> anyhow::Result<()> {
-    ensure_parent_dir(path)?;
-    fs::write(path, content).with_context(|| format!("failed to write {}", path.display()))
-}
-
-fn ensure_parent_dir(path: &Path) -> anyhow::Result<()> {
-    if let Some(parent) = path.parent()
-        && !parent.as_os_str().is_empty()
-    {
-        fs::create_dir_all(parent)
-            .with_context(|| format!("failed to create {}", parent.display()))?;
-    }
-    Ok(())
 }

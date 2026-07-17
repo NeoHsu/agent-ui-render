@@ -131,4 +131,7 @@ Handoff flow:
 ```
 
 These handoff files are embedded into the binary from `renderer-vue/src/`; update
-that source directory before rebuilding generated assets.
+that source directory before rebuilding generated assets. The CLI stages and
+syncs the complete bundle before replacing a managed destination. It refuses to
+delete an unknown `agent-ui-renderer/` directory unless the caller passes
+`--force`.

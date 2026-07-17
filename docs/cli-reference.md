@@ -99,10 +99,12 @@ Writes a no-JS static HTML fallback.
 
 ```bash
 agent-ui-render render vue input.json Report.vue
+agent-ui-render render vue input.json Report.vue --force
 ```
 
 Writes a Vue SFC wrapper and adjacent `agent-ui-renderer/` handoff source
-bundle.
+bundle. Existing managed bundles are replaced transactionally. An unmanaged
+`agent-ui-renderer` path is preserved unless `--force` is explicit.
 
 ```text
 +-----------------------+----------------------------------+

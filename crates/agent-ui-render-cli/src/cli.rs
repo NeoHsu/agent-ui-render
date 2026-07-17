@@ -89,7 +89,7 @@ pub enum RenderTarget {
     /// Write no-JS static HTML fallback
     StaticHtml(RenderFileCommand),
     /// Write Vue SFC wrapper plus agent-ui-renderer/ handoff bundle
-    Vue(RenderFileCommand),
+    Vue(VueRenderCommand),
 }
 
 #[derive(Debug, Args)]
@@ -98,6 +98,17 @@ pub struct RenderFileCommand {
     pub input: String,
     /// Output artifact path
     pub output_path: PathBuf,
+}
+
+#[derive(Debug, Args)]
+pub struct VueRenderCommand {
+    /// Input JSON path, or '-' for stdin
+    pub input: String,
+    /// Output Vue wrapper path
+    pub output_path: PathBuf,
+    /// Replace an existing unmanaged agent-ui-renderer path
+    #[arg(long)]
+    pub force: bool,
 }
 
 #[derive(Debug, Args)]

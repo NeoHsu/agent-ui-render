@@ -139,7 +139,9 @@ agent-ui-render render vue input.json Report.vue
 find agent-ui-renderer -maxdepth 2 -type f | sort
 ```
 
-The wrapper and `agent-ui-renderer/` directory must move together.
+The wrapper and `agent-ui-renderer/` directory must move together. Generated
+bundles contain `.agent-ui-render-managed`; if an existing directory is
+unmanaged, move it aside or review it before deliberately passing `--force`.
 
 ## Development failures
 
