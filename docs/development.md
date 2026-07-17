@@ -25,6 +25,7 @@ make test           build assets and run renderer and Rust tests
 make audit          run Cargo and Bun dependency audits
 make docs-check     check docs/cli-reference.md against CLI --help output
 make examples-check validate markdown payload examples against the CLI
+make workflow-check validate workflow syntax and immutable Action pins
 make check          run release-quality local checks
 make verify-release run release binary smoke verification
 make visual-smoke   build visual smoke artifacts
@@ -246,4 +247,6 @@ work complete.
 ```
 
 `make msrv` checks the workspace declaration against Rust 1.91. `make check`
-includes this MSRV gate and intentionally takes longer than narrow checks.
+includes this MSRV gate and intentionally takes longer than narrow checks. CI
+also runs the Rust integration suite on macOS and Windows; keep platform-specific
+file replacement and process behavior covered by those tests.

@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-.PHONY: help setup dev generate typecheck msrv lint test audit docs-check examples-check check verify-release visual-smoke interaction-smoke clean
+.PHONY: help setup dev generate typecheck msrv lint test audit docs-check examples-check workflow-check check verify-release visual-smoke interaction-smoke clean
 
 help: ## Show available project commands.
 	@awk 'BEGIN {FS = ":.*##"} /^[a-zA-Z0-9_-]+:.*##/ {printf "%-16s %s\n", $$1, $$2}' Makefile
@@ -41,7 +41,10 @@ docs-check: ## Check docs/cli-reference.md against the CLI --help output.
 examples-check: ## Validate markdown payload examples in docs/ and skills/ against the CLI.
 	./scripts/check-doc-examples.sh
 
-check: generate audit lint msrv test docs-check examples-check verify-release interaction-smoke ## Run the full local release-quality check suite.
+workflow-check: ## Validate GitHub workflow syntax and immutable Action pins.
+	./scripts/check-workflows.sh
+
+check: generate audit lint msrv test docs-check examples-check workflow-check verify-release interaction-smoke ## Run the full local release-quality check suite.
 
 verify-release: generate ## Run release binary smoke verification.
 	./scripts/verify-release.sh

@@ -145,7 +145,7 @@ unmanaged, move it aside or review it before deliberately passing `--force`.
 
 ## Development failures
 
-### Bun, Rust, or cargo-audit is missing
+### Bun, Rust, actionlint, or cargo-audit is missing
 
 Actions:
 

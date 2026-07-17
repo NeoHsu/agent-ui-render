@@ -123,7 +123,12 @@ irm "$base/agent-ui-render-installer.ps1" | iex
 | x64 Windows | `agent-ui-render-x86_64-pc-windows-msvc.zip` |
 
 Each archive contains the prebuilt `agent-ui-render` executable plus release
-metadata. Checksums are published next to the release assets.
+metadata. Checksums are published next to the release assets, and each platform
+archive has GitHub build-provenance attestation. Verify a download before use:
+
+```bash
+gh attestation verify <archive> --repo NeoHsu/agent-ui-render
+```
 
 ### mise
 
@@ -340,6 +345,7 @@ make setup      # install renderer dependencies
 make generate   # build generated/renderer.js and generated/renderer.css
 make test       # run renderer and Rust tests
 make msrv       # check all Rust targets with Rust 1.91
+make workflow-check # validate workflow syntax and Action pins
 make dev        # run the CLI help from source
 make check      # run release-quality checks
 ```
@@ -373,6 +379,7 @@ Build/runtime architecture:
 - `docs/compatibility.md` - versioning and contract-change policy.
 - `docs/charts-v2.md` - governed advanced chart coverage and v2 behavior.
 - `docs/components.md` - component catalog and presentation style reference.
+- `SECURITY.md` - private vulnerability reporting and release verification.
 - `docs/security-model.md` - trust boundaries and unsafe-content rules.
 - `docs/renderer-development.md` - Vue renderer development and handoff bundle.
 - `docs/release.md` - release process and cargo-dist publishing flow.

@@ -148,10 +148,18 @@ remains outside the payload contract.
               v
 +-----------------------------+
 | scripts/verify-release.sh   |
++-------------+---------------+
+              |
+              v
++-----------------------------+
+| macOS/Windows tests and     |
+| attested platform artifacts |
 +-----------------------------+
 ```
 
-CI blocks on these gates before release-sensitive changes are accepted.
+CI blocks on these gates before release-sensitive changes are accepted. Release
+Actions are pinned to immutable commits, and publishing has write permission only
+in the final host job.
 
 ## Non-goals
 

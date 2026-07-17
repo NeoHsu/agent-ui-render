@@ -14,7 +14,8 @@ targets = [
 ]
 packages = ["agent-ui-render"]
 hosting = "github"
-pr-run-mode = "plan"
+pr-run-mode = "upload"
 install-path = "CARGO_HOME"
-github-attestations = false
+github-attestations = true
+# Release CI adds project-specific Vue, MSRV, audit, browser, and docs gates.
 allow-dirty = ["ci"]
