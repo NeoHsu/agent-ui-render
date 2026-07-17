@@ -128,5 +128,27 @@ receives a GitHub build-provenance attestation. Verify a downloaded archive with
 gh attestation verify <archive> --repo NeoHsu/agent-ui-render
 ```
 
+The global release artifacts also include `agent-ui-render.spdx.json`, generated
+from the pinned Rust and Vue dependency manifests with pinned Syft tooling.
+Review it alongside the checksums and provenance before publishing.
+
+## Signing and notarization blockers
+
+Platform-native signing is intentionally not represented as complete:
+
+- macOS Developer ID signing and notarization require an active Apple Developer
+  team, a Developer ID Application certificate/private key, and App Store Connect
+  notarization credentials.
+- Windows Authenticode requires an organization-controlled code-signing
+  certificate/private key or approved managed signing service credentials.
+
+Those external identities and secrets are not available in this repository, so
+both items remain release blockers for a policy that requires OS trust dialogs
+to identify a verified publisher. A maintainer must provide the credentials,
+secret-storage policy, certificate rotation/revocation procedure, and approval to
+enable signing. Checksums, GitHub provenance attestations, and the SBOM remain in
+place, but they are not substitutes for platform signing. Do not add test,
+self-signed, or placeholder credentials to the release workflow.
+
 See also `docs/compatibility.md` and `docs/security-model.md` before changing
 payload contracts or security-sensitive rendering behavior.

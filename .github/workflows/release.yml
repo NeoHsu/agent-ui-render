@@ -231,6 +231,29 @@ jobs:
         with:
           persist-credentials: false
           submodules: recursive
+      - name: Generate SPDX SBOM
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
+        with:
+          path: .
+          output-file: agent-ui-render.spdx.json
+          format: spdx-json
+          upload-artifact: false
+          upload-release-assets: false
+          syft-version: v1.48.0
+      - name: Verify SBOM coverage
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          packages = json.loads(Path("agent-ui-render.spdx.json").read_text())["packages"]
+          names = {package["name"] for package in packages}
+          missing = {"agent-ui-render", "vue"} - names
+          if missing:
+              raise SystemExit(f"SBOM is missing expected packages: {sorted(missing)}")
+          print(f"SBOM contains {len(packages)} packages")
+          PY
       - name: Install cached dist
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
@@ -271,6 +294,7 @@ jobs:
           path: |
             ${{ steps.cargo-dist.outputs.paths }}
             ${{ env.BUILD_MANIFEST_NAME }}
+            agent-ui-render.spdx.json
   # Determines if we should publish/announce
   host:
     needs:

@@ -34,8 +34,10 @@ attestations, and documentation for required mitigations.
 
 ## Release verification
 
-Release archives include checksums and GitHub build-provenance attestations.
-After downloading an archive, verify both before installation:
+Release archives include checksums and GitHub build-provenance attestations;
+the release also publishes `agent-ui-render.spdx.json` as its software bill of
+materials. After downloading an archive, verify the checksum and provenance
+before installation:
 
 ```bash
 gh attestation verify <archive> --repo NeoHsu/agent-ui-render
