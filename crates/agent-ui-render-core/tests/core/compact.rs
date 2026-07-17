@@ -117,11 +117,18 @@ console.log(charts.length);
         report = serde_json::to_string(&normalized)?,
     );
     // Resolve vega-lite and its vega peer from the renderer's installed,
-    // lockfile-pinned node_modules; the workspace root has none in CI.
+    // lockfile-pinned node_modules; the workspace root has none in CI. Use a
+    // script file because the complete showcase exceeds Windows command-line
+    // length limits when passed to `bun --eval`.
+    let renderer_dir = workspace_root()?.join("renderer-vue");
+    let compile_file = tempfile::Builder::new()
+        .prefix(".agent-ui-chart-compile-")
+        .suffix(".mjs")
+        .tempfile_in(&renderer_dir)?;
+    std::fs::write(compile_file.path(), compile_script)?;
     let output = Command::new("bun")
-        .arg("--eval")
-        .arg(compile_script)
-        .current_dir(workspace_root()?.join("renderer-vue"))
+        .arg(compile_file.path())
+        .current_dir(renderer_dir)
         .output()?;
     assert!(
         output.status.success(),
