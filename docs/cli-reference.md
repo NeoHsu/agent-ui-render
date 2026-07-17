@@ -103,14 +103,16 @@ agent-ui-render render vue input.json Report.vue --force
 ```
 
 Writes a Vue SFC wrapper and adjacent `agent-ui-renderer/` handoff source
-bundle. Existing managed bundles are replaced transactionally. An unmanaged
-`agent-ui-renderer` path is preserved unless `--force` is explicit.
+bundle. Existing managed bundles are replaced transactionally and concurrent
+writers are serialized with a persistent sibling `.agent-ui-renderer.lock` file.
+An unmanaged `agent-ui-renderer` path is preserved unless `--force` is explicit.
 
 ```text
 +-----------------------+----------------------------------+
 | Output path           | Purpose                          |
 +-----------------------+----------------------------------+
 | Report.vue            | wrapper with normalized payload  |
+| .agent-ui-renderer.lock | cross-process handoff lock      |
 | agent-ui-renderer/    | adjacent renderer source bundle  |
 |   AgentUiRenderer.vue | root renderer component          |
 |   components/**       | renderer child components        |

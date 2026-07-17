@@ -120,6 +120,7 @@ fn render_vue_force_replaces_unmanaged_directory() -> Result<(), Box<dyn std::er
     assert!(wrapper.is_file());
     assert!(renderer_dir.join("AgentUiRenderer.vue").is_file());
     assert!(renderer_dir.join(".agent-ui-render-managed").is_file());
+    assert!(temp.path().join(".agent-ui-renderer.lock").is_file());
     assert!(!renderer_dir.join("custom.txt").exists());
 
     let status = Command::new(env!("CARGO_BIN_EXE_agent-ui-render"))

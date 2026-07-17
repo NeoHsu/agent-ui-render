@@ -1,6 +1,6 @@
 use std::{
     collections::BTreeSet,
-    fs::{self, File},
+    fs::{self, File, OpenOptions},
     io::Write,
     path::{Component, Path, PathBuf},
 };
@@ -9,6 +9,7 @@ use anyhow::Context;
 
 const HANDOFF_MARKER: &str = "agent-ui-render managed handoff\nformat=1\n";
 const HANDOFF_MARKER_NAME: &str = ".agent-ui-render-managed";
+const HANDOFF_LOCK_NAME: &str = ".agent-ui-renderer.lock";
 
 pub fn atomic_write_text(path: &Path, content: &str) -> anyhow::Result<()> {
     ensure_parent_dir(path)?;
@@ -48,6 +49,7 @@ pub fn replace_vue_handoff(
             renderer_dir.display()
         );
     }
+    let _handoff_lock = acquire_handoff_lock(output_dir)?;
     ensure_replaceable_renderer(&renderer_dir, files, force)?;
 
     let transaction = tempfile::Builder::new()
@@ -223,6 +225,20 @@ fn replace_file(staged: &Path, destination: &Path, transaction: &Path) -> anyhow
     Ok(())
 }
 
+fn acquire_handoff_lock(output_dir: &Path) -> anyhow::Result<File> {
+    let path = output_dir.join(HANDOFF_LOCK_NAME);
+    let file = OpenOptions::new()
+        .create(true)
+        .truncate(false)
+        .read(true)
+        .write(true)
+        .open(&path)
+        .with_context(|| format!("failed to open handoff lock {}", path.display()))?;
+    file.lock()
+        .with_context(|| format!("failed to acquire handoff lock {}", path.display()))?;
+    Ok(file)
+}
+
 fn ensure_parent_dir(path: &Path) -> anyhow::Result<()> {
     let parent = parent_dir(path);
     fs::create_dir_all(parent).with_context(|| format!("failed to create {}", parent.display()))
@@ -253,6 +269,57 @@ mod tests {
         atomic_write_text(&output, "complete new output")?;
 
         assert_eq!(fs::read_to_string(output)?, "complete new output");
+        Ok(())
+    }
+
+    #[test]
+    fn concurrent_handoffs_keep_wrapper_and_renderer_consistent() -> anyhow::Result<()> {
+        use std::{sync::Barrier, thread};
+
+        let temp = tempfile::tempdir()?;
+        let output = temp.path().join("Report.vue");
+        let renderer_path = temp.path().join("agent-ui-renderer/AgentUiRenderer.vue");
+
+        for _ in 0..16 {
+            let barrier = Barrier::new(3);
+            let results = thread::scope(|scope| {
+                let handles = [("wrapper-a", "renderer-a"), ("wrapper-b", "renderer-b")]
+                    .into_iter()
+                    .map(|(wrapper, renderer)| {
+                        let barrier = &barrier;
+                        let output = &output;
+                        scope.spawn(move || {
+                            barrier.wait();
+                            replace_vue_handoff(
+                                output,
+                                wrapper,
+                                &[("AgentUiRenderer.vue", renderer)],
+                                false,
+                            )
+                        })
+                    })
+                    .collect::<Vec<_>>();
+                barrier.wait();
+                handles
+                    .into_iter()
+                    .map(|handle| match handle.join() {
+                        Ok(result) => result,
+                        Err(_) => Err(anyhow::anyhow!("handoff thread panicked")),
+                    })
+                    .collect::<Vec<_>>()
+            });
+            for result in results {
+                result?;
+            }
+
+            let wrapper = fs::read_to_string(&output)?;
+            let renderer = fs::read_to_string(&renderer_path)?;
+            assert!(
+                (wrapper == "wrapper-a" && renderer == "renderer-a")
+                    || (wrapper == "wrapper-b" && renderer == "renderer-b"),
+                "wrapper {wrapper:?} and renderer {renderer:?} came from different transactions"
+            );
+        }
         Ok(())
     }
 
