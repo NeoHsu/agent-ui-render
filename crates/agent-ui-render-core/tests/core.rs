@@ -43,6 +43,7 @@ const COMPACT_V2_SCHEMA: &str = include_str!("../../../schemas/v2/compact.schema
 const NORMALIZED_V2_SCHEMA: &str = include_str!("../../../schemas/v2/normalized.schema.json");
 const SPEC_V2_SCHEMA: &str = include_str!("../../../schemas/v2/spec.schema.json");
 const V2_SHOWCASE: &str = include_str!("../../../examples/v2-chart-showcase.input.json");
+const MARKDOWN_SECURITY_CASES: &str = include_str!("../../../fixtures/markdown-security.json");
 
 fn schema_validator(source: &str) -> Result<jsonschema::Validator, Box<dyn Error>> {
     let schema: Value = serde_json::from_str(source)?;

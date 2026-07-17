@@ -1,0 +1,67 @@
+[
+  {
+    "name": "safe https link",
+    "source": "[guide](https://example.com/docs)",
+    "expectedHtml": "<p><a href=\"https://example.com/docs\" target=\"_blank\" rel=\"noopener noreferrer\">guide</a></p>"
+  },
+  {
+    "name": "mixed-case https link",
+    "source": "[guide](HTTPS://example.com/docs)",
+    "expectedHtml": "<p><a href=\"HTTPS://example.com/docs\" target=\"_blank\" rel=\"noopener noreferrer\">guide</a></p>"
+  },
+  {
+    "name": "query parameters are escaped once",
+    "source": "[query](https://example.com/search?a=1&b=2)",
+    "expectedHtml": "<p><a href=\"https://example.com/search?a=1&amp;b=2\" target=\"_blank\" rel=\"noopener noreferrer\">query</a></p>"
+  },
+  {
+    "name": "safe root-relative link",
+    "source": "[report](/reports/42)",
+    "expectedHtml": "<p><a href=\"/reports/42\">report</a></p>"
+  },
+  {
+    "name": "safe anchor link",
+    "source": "[details](#details)",
+    "expectedHtml": "<p><a href=\"#details\">details</a></p>"
+  },
+  {
+    "name": "safe mail link",
+    "source": "[owner](mailto:owner@example.com)",
+    "expectedHtml": "<p><a href=\"mailto:owner@example.com\">owner</a></p>"
+  },
+  {
+    "name": "protocol-relative link is rejected",
+    "source": "[external](//evil.example/path)",
+    "expectedHtml": "<p>external</p>"
+  },
+  {
+    "name": "javascript link is rejected case-insensitively",
+    "source": "[unsafe](JaVaScRiPt:boom)",
+    "expectedHtml": "<p>unsafe</p>"
+  },
+  {
+    "name": "data link is rejected",
+    "source": "[unsafe](data:text/html,boom)",
+    "expectedHtml": "<p>unsafe</p>"
+  },
+  {
+    "name": "link whitespace is rejected",
+    "source": "[space](/ok path)",
+    "expectedHtml": "<p>space</p>"
+  },
+  {
+    "name": "leading link whitespace is rejected",
+    "source": "[space]( https://example.com)",
+    "expectedHtml": "<p>space</p>"
+  },
+  {
+    "name": "link control character is rejected",
+    "source": "[tab](/ok\tpath)",
+    "expectedHtml": "<p>tab</p>"
+  },
+  {
+    "name": "raw markup remains escaped",
+    "source": "<script>alert('unsafe')</script>",
+    "expectedHtml": "<p>&lt;script&gt;alert(&#39;unsafe&#39;)&lt;/script&gt;</p>"
+  }
+]

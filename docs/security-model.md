@@ -50,7 +50,8 @@ safe markdown text. Markdown is parsed as a small allowlist subset:
 - paragraphs, blockquotes, unordered and ordered lists
 - fenced code blocks
 - emphasis/strong/inline code
-- safe links: `https://`, `http://`, `mailto:`, `/path`, and `#anchor`
+- safe links: `https://`, `http://`, `mailto:`, `/path`, and `#anchor`;
+  protocol-relative URLs, whitespace, and control characters are rejected
 - semantic tokens like `{warning: pending}`
 
 ## What is blocked

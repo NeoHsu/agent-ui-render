@@ -73,6 +73,9 @@ Rust embeds these files through `include_str!`, so they must exist before
 - Vega's loader must continue rejecting all external network/file resources.
 - Keep focused unit and component coverage under `renderer-vue/tests`; browser-only
   interactions remain in `scripts/interaction-smoke.ts`.
+- Keep Rust static Markdown and Vue Markdown security behavior aligned through
+  `fixtures/markdown-security.json`; add adversarial cases there before changing
+  link or escaping policy.
 - Commit `renderer-vue/src` changes and generated asset changes together.
 - Run Rust and Vue checks before release.
 

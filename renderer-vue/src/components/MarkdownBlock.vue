@@ -87,7 +87,7 @@ function renderInline(nodes: MarkdownInlineNode[]): VNodeChild[] {
             key: index,
             href: node.href,
             target: external ? "_blank" : undefined,
-            rel: external ? "noreferrer" : undefined,
+            rel: external ? "noopener noreferrer" : undefined,
           },
           renderInline(node.children),
         );

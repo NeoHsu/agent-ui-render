@@ -245,16 +245,20 @@ fn replace_links(source: &str) -> String {
         };
         let href = &after[href_start..href_start + href_end];
         if is_safe_link(href) {
-            let external = href.starts_with("http://") || href.starts_with("https://");
+            let external = href
+                .get(..7)
+                .is_some_and(|prefix| prefix.eq_ignore_ascii_case("http://"))
+                || href
+                    .get(..8)
+                    .is_some_and(|prefix| prefix.eq_ignore_ascii_case("https://"));
             let attrs = if external {
-                " target=\"_blank\" rel=\"noreferrer\""
+                " target=\"_blank\" rel=\"noopener noreferrer\""
             } else {
                 ""
             };
-            output.push_str(&format!(
-                "<a href=\"{}\"{attrs}>{label}</a>",
-                escape_html(href)
-            ));
+            // The full inline source was escaped before link parsing, so the
+            // href is already attribute-safe and must not be escaped twice.
+            output.push_str(&format!("<a href=\"{href}\"{attrs}>{label}</a>"));
             rest = &after[href_start + href_end + 1..];
         } else {
             output.push_str(label);
@@ -266,9 +270,16 @@ fn replace_links(source: &str) -> String {
 }
 
 fn is_safe_link(href: &str) -> bool {
-    href.starts_with("https://")
-        || href.starts_with("http://")
-        || href.starts_with("mailto:")
-        || href.starts_with('/')
+    if href.is_empty()
+        || href.chars().any(char::is_whitespace)
+        || href.chars().any(char::is_control)
+    {
+        return false;
+    }
+    let lower = href.to_ascii_lowercase();
+    lower.starts_with("https://")
+        || lower.starts_with("http://")
+        || lower.starts_with("mailto:")
         || href.starts_with('#')
+        || (href.starts_with('/') && !href.starts_with("//"))
 }

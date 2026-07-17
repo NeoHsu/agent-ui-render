@@ -1,4 +1,4 @@
-import { isSemanticTone, type SemanticTone } from "./format";
+import { isSemanticTone, type SemanticTone } from "./format.js";
 
 export type MarkdownInlineNode =
 	| { type: "text"; text: string }
@@ -192,20 +192,20 @@ export function parseInlineMarkdown(
 			const closeHref =
 				closeLabel >= 0 ? value.indexOf(")", closeLabel + 2) : -1;
 			if (closeLabel > index + 1 && closeHref > closeLabel + 2) {
+				const label = value.slice(index + 1, closeLabel);
 				const href = sanitizeHref(value.slice(closeLabel + 2, closeHref));
+				flush();
 				if (href) {
-					flush();
 					nodes.push({
 						type: "link",
 						href,
-						children: parseInlineMarkdown(
-							value.slice(index + 1, closeLabel),
-							depth + 1,
-						),
+						children: parseInlineMarkdown(label, depth + 1),
 					});
-					index = closeHref + 1;
-					continue;
+				} else {
+					nodes.push(...parseInlineMarkdown(label, depth + 1));
 				}
+				index = closeHref + 1;
+				continue;
 			}
 		}
 
@@ -267,7 +267,9 @@ function renderInlineHtml(nodes: MarkdownInlineNode[]): string {
 					return `<span class="semantic semantic-${node.tone}">${renderInlineHtml(node.children)}</span>`;
 				case "link": {
 					const external = /^https?:\/\//i.test(node.href);
-					const attrs = external ? ' target="_blank" rel="noreferrer"' : "";
+					const attrs = external
+						? ' target="_blank" rel="noopener noreferrer"'
+						: "";
 					return `<a href="${escapeHtml(node.href)}"${attrs}>${renderInlineHtml(node.children)}</a>`;
 				}
 				default:
@@ -288,7 +290,7 @@ function isBlockStart(line: string): boolean {
 }
 
 function sanitizeHref(value: string): string {
-	const href = value.trim();
+	const href = value;
 	if (!href || /[\u0000-\u001f\u007f\s]/.test(href)) return "";
 	if (/^(?:https?:|mailto:)/i.test(href)) return href;
 	if (href.startsWith("#")) return href;

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import securityCases from "../../fixtures/markdown-security.json";
 import { markdownToHtml, parseSafeMarkdown } from "../src/markdown.js";
 
 describe("safe markdown", () => {
@@ -28,9 +29,17 @@ describe("safe markdown", () => {
 			"[guide](https://example.com/docs) [unsafe](javascript:alert(1)) {warning: verify this}",
 		);
 		expect(html).toContain(
-			'<a href="https://example.com/docs" target="_blank" rel="noreferrer">guide</a>',
+			'<a href="https://example.com/docs" target="_blank" rel="noopener noreferrer">guide</a>',
 		);
 		expect(html).toContain('class="semantic semantic-warning"');
 		expect(html).not.toContain('href="javascript:');
+	});
+
+	it("matches the shared cross-renderer security policy", () => {
+		for (const testCase of securityCases) {
+			expect(markdownToHtml(testCase.source), testCase.name).toBe(
+				testCase.expectedHtml,
+			);
+		}
 	});
 });

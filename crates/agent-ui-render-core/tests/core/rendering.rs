@@ -1,3 +1,5 @@
+use proptest::prelude::*;
+
 use super::*;
 
 #[test]
@@ -9,6 +11,39 @@ fn markdown_renderer_escapes_or_drops_unsafe_inline_content() {
     assert!(!html.contains("javascript:"));
     assert!(html.contains("&lt;script&gt;alert(1)&lt;/script&gt;"));
     assert!(html.contains("<span class=\"semantic semantic-warning\">pending</span>"));
+}
+
+#[test]
+fn markdown_security_fixture_matches_static_policy() -> Result<(), Box<dyn Error>> {
+    let cases: Value = serde_json::from_str(MARKDOWN_SECURITY_CASES)?;
+    for case in cases
+        .as_array()
+        .ok_or_else(|| io::Error::other("markdown security cases should be an array"))?
+    {
+        let name = case["name"].as_str().unwrap_or("unnamed case");
+        let source = case["source"]
+            .as_str()
+            .ok_or_else(|| io::Error::other("markdown case source should be a string"))?;
+        let expected = case["expectedHtml"]
+            .as_str()
+            .ok_or_else(|| io::Error::other("markdown expectedHtml should be a string"))?;
+        assert_eq!(markdown_to_html(source), expected, "{name}");
+    }
+    Ok(())
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig::with_cases(128))]
+
+    #[test]
+    fn arbitrary_markdown_never_emits_active_markup(source in ".{0,1024}") {
+        let html = markdown_to_html(&source).to_ascii_lowercase();
+        prop_assert!(!html.contains("<script"));
+        prop_assert!(!html.contains("<iframe"));
+        prop_assert!(!html.contains("href=\"javascript:"));
+        prop_assert!(!html.contains("href=\"data:"));
+        prop_assert!(!html.contains("href=\"//"));
+    }
 }
 
 #[test]
