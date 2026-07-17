@@ -334,6 +334,8 @@ validated as safe CSS color literals before render output is written.
 ```bash
 make setup      # install renderer dependencies
 make generate   # build generated/renderer.js and generated/renderer.css
+make test       # run renderer and Rust tests
+make msrv       # check all Rust targets with Rust 1.91
 make dev        # run the CLI help from source
 make check      # run release-quality checks
 ```

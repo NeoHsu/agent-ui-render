@@ -6,6 +6,14 @@ bun = "1.3.14"
 dir = "renderer-vue"
 run = "bun install && bun run typecheck && bun run build"
 
+[tasks.vue-test]
+depends = ["vue-build"]
+dir = "renderer-vue"
+run = "bun run test"
+
+[tasks.msrv]
+run = "cargo +1.91 check --workspace --all-targets --locked"
+
 [tasks.audit]
 run = ["cargo audit", "cd renderer-vue && bun audit"]
 
@@ -14,7 +22,7 @@ depends = ["vue-build"]
 run = "./scripts/verify-release.sh"
 
 [tasks.test]
-depends = ["vue-build"]
+depends = ["vue-test", "msrv"]
 run = [
   "cargo audit",
   "cd renderer-vue && bun audit",

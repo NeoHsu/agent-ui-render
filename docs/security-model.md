@@ -112,7 +112,7 @@ remains outside the payload contract.
               |
               v
 +-----------------------------+
-| Vue typecheck and build     |
+| Vue typecheck, tests, build |
 | generated asset drift check |
 +-------------+---------------+
               |
@@ -124,6 +124,11 @@ remains outside the payload contract.
               v
 +-----------------------------+
 | rustfmt and clippy          |
++-------------+---------------+
+              |
+              v
++-----------------------------+
+| Rust 1.91 MSRV check        |
 +-------------+---------------+
               |
               v

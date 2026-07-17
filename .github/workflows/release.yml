@@ -59,11 +59,24 @@ jobs:
         with:
           persist-credentials: false
           submodules: recursive
+      - uses: oven-sh/setup-bun@v2.2.0
       - uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # v1
         with:
           toolchain: stable
-      - name: Verify generated renderer assets are present
-        run: test -s generated/renderer.js && test -s generated/renderer.css
+      - name: Test and build Vue renderer assets
+        working-directory: renderer-vue
+        run: |
+          bun install --frozen-lockfile
+          bun run typecheck
+          bun run test
+          bun run build
+          bun audit
+      - name: Ensure generated renderer assets are committed
+        run: git diff --exit-code generated/ renderer-vue/src/
+      - name: Check declared Rust MSRV
+        run: |
+          rustup toolchain install 1.91.0 --profile minimal
+          cargo +1.91.0 check --workspace --all-targets --locked
       - name: Install cargo-audit
         run: cargo install cargo-audit --locked
       - run: cargo audit

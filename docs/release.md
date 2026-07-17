@@ -34,7 +34,7 @@ publishing.
                |
                v
 +------------------------------+
-| verify assets, audit, smoke  |
+| tests, MSRV, audit, smoke    |
 +--------------+---------------+
                |
                v
@@ -62,11 +62,13 @@ Equivalent expanded commands:
 cd renderer-vue
 bun install
 bun run typecheck
+bun run test
 bun run build
 bun audit
 
 cd ..
 cargo audit
+cargo +1.91 check --workspace --all-targets --locked
 cargo fmt --all -- --check
 cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
@@ -86,9 +88,10 @@ git tag v0.3.0
 git push origin v0.3.0
 ```
 
-The privileged release workflow uses the committed generated assets, runs
-`cargo audit`, runs release smoke verification, installs `cargo-dist`, and
-publishes native binaries and installer scripts for the configured targets.
+The privileged release workflow reruns Vue typechecks/tests/builds, verifies
+committed generated assets, checks Rust 1.91 compatibility, audits both dependency
+sets, runs release smoke verification, installs `cargo-dist`, and publishes native
+binaries and installer scripts for the configured targets.
 
 ## Release artifact expectations
 

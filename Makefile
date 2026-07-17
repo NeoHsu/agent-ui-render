@@ -1,9 +1,9 @@
 .DEFAULT_GOAL := help
 
-.PHONY: help setup dev generate typecheck lint test audit docs-check examples-check check verify-release visual-smoke interaction-smoke clean
+.PHONY: help setup dev generate typecheck msrv lint test audit docs-check examples-check check verify-release visual-smoke interaction-smoke clean
 
 help: ## Show available project commands.
-	@awk 'BEGIN {FS = ":.*##"} /^[a-zA-Z0-9_-]+:.*##/ {printf "%-16s %s\n", $$1, $$2}' "$(firstword $(MAKEFILE_LIST))"
+	@awk 'BEGIN {FS = ":.*##"} /^[a-zA-Z0-9_-]+:.*##/ {printf "%-16s %s\n", $$1, $$2}' Makefile
 
 setup: ## Install development dependencies for the Vue renderer.
 	@echo "If tools are missing, run: mise install"
@@ -19,11 +19,15 @@ typecheck: ## Run Vue and Rust type checks.
 	(cd renderer-vue && bun run typecheck)
 	cargo check --workspace --all-targets
 
+msrv: ## Check all Rust targets with the declared minimum supported Rust version.
+	cargo +1.91 check --workspace --all-targets --locked
+
 lint: typecheck ## Run formatting and clippy checks.
 	cargo fmt --all -- --check
 	cargo clippy --workspace --all-targets -- -D warnings
 
-test: generate ## Run Rust tests after embedded assets are current.
+test: generate ## Run renderer and Rust tests after embedded assets are current.
+	(cd renderer-vue && bun run test)
 	cargo test --workspace
 
 audit: ## Run Rust and renderer dependency advisory checks.
@@ -37,7 +41,7 @@ docs-check: ## Check docs/cli-reference.md against the CLI --help output.
 examples-check: ## Validate markdown payload examples in docs/ and skills/ against the CLI.
 	./scripts/check-doc-examples.sh
 
-check: generate audit lint test docs-check examples-check verify-release interaction-smoke ## Run the full local release-quality check suite.
+check: generate audit lint msrv test docs-check examples-check verify-release interaction-smoke ## Run the full local release-quality check suite.
 
 verify-release: generate ## Run release binary smoke verification.
 	./scripts/verify-release.sh

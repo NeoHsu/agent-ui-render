@@ -6,6 +6,7 @@ This guide is for maintainers and coding agents modifying this repository.
 
 ```bash
 mise install
+rustup toolchain install 1.91 --profile minimal
 make setup
 make generate
 make dev
@@ -18,8 +19,9 @@ make setup          install renderer dependencies
 make generate       build generated/renderer.js and generated/renderer.css
 make dev            build assets and run CLI help from source
 make typecheck      run Vue and Rust type checks
+make msrv           check all Rust targets with Rust 1.91
 make lint           run typecheck, rustfmt check, and clippy
-make test           build assets and run Rust tests
+make test           build assets and run renderer and Rust tests
 make audit          run Cargo and Bun dependency audits
 make docs-check     check docs/cli-reference.md against CLI --help output
 make examples-check validate markdown payload examples against the CLI
@@ -70,6 +72,7 @@ project workflow docs; agents should be able to read the diagram in plain text.
 | crates/agent-ui-render-cli    | CLI parsing, IO, output, exit codes  |
 | crates/agent-ui-render-core   | Wire, domain, validation, rendering  |
 | renderer-vue/src              | Vue renderer source at build time    |
+| renderer-vue/tests            | Vitest unit and component tests      |
 | generated                     | Bundled JS/CSS embedded by Rust      |
 | schemas                       | JSON Schema mirrors                  |
 | examples                      | Compact input smoke data             |
@@ -145,6 +148,12 @@ USER RUNTIME                                      +------------------------+
 +-----------------------------+
 | make lint                   |
 | Vue typecheck + Rust lint   |
++-------------+---------------+
+              |
+              v
++-----------------------------+
+| make test                   |
+| Vitest + Rust tests         |
 +-------------+---------------+
               |
               v
@@ -230,10 +239,11 @@ work complete.
 | Docs only                 | Inspect Markdown and diagrams            |
 | Payload/example           | validate plus one render command         |
 | Rust only                 | cargo test --workspace                   |
-| Vue renderer              | make generate plus make lint             |
+| Vue renderer              | make generate plus make lint and test    |
+| Rust MSRV                 | make msrv                               |
 | Contract/security/release | make check                               |
 +---------------------------+------------------------------------------+
 ```
 
-`make check` intentionally mirrors release-quality gates and may take longer
-than narrow checks.
+`make msrv` checks the workspace declaration against Rust 1.91. `make check`
+includes this MSRV gate and intentionally takes longer than narrow checks.

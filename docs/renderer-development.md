@@ -16,6 +16,7 @@ Equivalent direct commands:
 cd renderer-vue
 bun install
 bun run typecheck
+bun run test
 bun run build
 ```
 
@@ -37,10 +38,11 @@ Rust embeds these files through `include_str!`, so they must exist before
 | Vue components, CSS, TS     |
 +--------------+--------------+
                |
-               | vue-tsc validates contracts
+               | vue-tsc + Vitest validate
+               | contracts and behavior
                v
 +-----------------------------+
-| Type-safe renderer source   |
+| Verified renderer source    |
 +--------------+--------------+
                |
                | Vite bundles client assets
@@ -69,6 +71,8 @@ Rust embeds these files through `include_str!`, so they must exist before
 - Version 2 Vega-Lite specs come from the trusted Rust planner. The Vue renderer
   only attaches normalized dataset rows and owns Vega View lifecycle cleanup.
 - Vega's loader must continue rejecting all external network/file resources.
+- Keep focused unit and component coverage under `renderer-vue/tests`; browser-only
+  interactions remain in `scripts/interaction-smoke.ts`.
 - Commit `renderer-vue/src` changes and generated asset changes together.
 - Run Rust and Vue checks before release.
 
