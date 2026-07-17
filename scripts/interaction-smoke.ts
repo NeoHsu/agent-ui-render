@@ -118,6 +118,7 @@ await wait(12_000);
 
 const initial = await evaluate<{
 	cards: number;
+	footers: number;
 	svgs: number;
 	errors: number;
 	toolbars: number;
@@ -133,6 +134,7 @@ const initial = await evaluate<{
 	interactionLegendOverlaps: number;
 }>(`(() => ({
 	cards: document.querySelectorAll('[data-view-intent="chart"]').length,
+	footers: document.querySelectorAll('.agent-ui-render > .footer').length,
 	svgs: document.querySelectorAll('.vega-chart svg').length,
 	errors: document.querySelectorAll('.chart-render-error').length,
 	toolbars: document.querySelectorAll('.chart-interaction-bar').length,
@@ -165,6 +167,10 @@ const initial = await evaluate<{
 	}).length
 }))()`);
 assert(initial.cards === 44, `expected 44 chart cards, got ${initial.cards}`);
+assert(
+	initial.footers === 1,
+	`expected one report footer, got ${initial.footers}`,
+);
 assert(initial.svgs === 44, `expected 44 SVG charts, got ${initial.svgs}`);
 assert(initial.errors === 0, `expected no chart errors, got ${initial.errors}`);
 assert(

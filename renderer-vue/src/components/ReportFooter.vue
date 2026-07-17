@@ -1,7 +1,12 @@
 <script setup lang="ts">
-defineProps<{
-  text?: string;
-}>();
+withDefaults(
+  defineProps<{
+    text?: string;
+  }>(),
+  {
+    text: "Structured report generated from validated input; payload text was escaped.",
+  },
+);
 </script>
 
 <template>
