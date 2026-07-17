@@ -348,6 +348,7 @@ make test       # run renderer and Rust tests
 make msrv       # check all Rust targets with Rust 1.91
 make workflow-check   # validate workflow syntax and Action pins
 make performance-check # enforce renderer raw/gzip budgets
+make dist-smoke-check  # self-test archive/installer verification
 make dev              # run the CLI help from source
 make check            # run release-quality checks
 ```

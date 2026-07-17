@@ -18,6 +18,7 @@ Stable task entry points:
 make setup          install renderer dependencies
 make generate       build generated/renderer.js and generated/renderer.css
 make performance-check enforce renderer bundle size budgets
+make dist-smoke-check self-test archive and installer verification
 make dev            build assets and run CLI help from source
 make typecheck      run Vue and Rust type checks
 make msrv           check all Rust targets with Rust 1.91

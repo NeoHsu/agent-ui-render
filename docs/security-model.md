@@ -163,6 +163,7 @@ raw Vega expressions remain outside the payload contract.
               v
 +-----------------------------+
 | macOS/Windows tests and     |
+| archive/installer smoke     |
 | attested platform artifacts |
 +-----------------------------+
 ```

@@ -53,6 +53,8 @@ jobs:
         run: git diff --exit-code generated/ renderer-vue/src/
       - name: Enforce renderer performance budgets
         run: bun scripts/check-performance-budgets.ts
+      - name: Self-test release artifact smoke checks
+        run: python3 scripts/smoke-dist-artifacts.py self-test
       - name: Install cargo-audit
         run: cargo install cargo-audit --version 0.22.2 --locked
       - run: cargo audit

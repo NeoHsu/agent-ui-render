@@ -167,6 +167,9 @@ jobs:
         with:
           persist-credentials: false
           submodules: recursive
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.13"
       - name: Install dist
         run: cargo install cargo-dist --version 0.31.0 --locked
       # Get the dist-manifest
@@ -177,6 +180,7 @@ jobs:
           path: target/distrib/
           merge-multiple: true
       - name: Build artifacts
+        shell: bash
         env:
           DIST_ARGS: ${{ matrix.dist_args }}
           DIST_TAG: ${{ needs.plan.outputs.tag }}
@@ -188,6 +192,11 @@ jobs:
           fi
           dist build "${tag_args[@]}" --print=linkage --output-format=json "${dist_args[@]}" > dist-manifest.json
           echo "dist ran successfully"
+      - name: Smoke archive artifacts
+        shell: bash
+        run: |
+          dist print-upload-files-from-manifest --manifest dist-manifest.json > dist-artifact-paths.txt
+          python scripts/smoke-dist-artifacts.py archives dist-artifact-paths.txt
       - name: Attest
         if: needs.plan.outputs.publishing == 'true'
         uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
@@ -231,6 +240,9 @@ jobs:
         with:
           persist-credentials: false
           submodules: recursive
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.13"
       - name: Generate SPDX SBOM
         uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
         with:
@@ -287,6 +299,11 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
           cp dist-manifest.json "$BUILD_MANIFEST_NAME"
+      - name: Smoke installer artifacts
+        shell: bash
+        run: |
+          jq --raw-output ".upload_files[]" dist-manifest.json > dist-artifact-paths.txt
+          python scripts/smoke-dist-artifacts.py installers dist-artifact-paths.txt --require-powershell
       - name: "Upload artifacts"
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:

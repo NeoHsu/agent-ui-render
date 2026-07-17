@@ -81,12 +81,16 @@ The release binary should include `generated/renderer.js` and
 needed. `scripts/verify-release.sh` builds the release binary, validates bundled
 schemas as JSON, validates all examples, normalizes/plans an example, and renders
 HTML/static HTML smoke artifacts. `make check` also enforces raw/gzip renderer
-budgets and a measured browser chart-readiness threshold.
+budgets, a measured browser chart-readiness threshold, and a self-test of the
+distribution artifact verifier.
 
 ## Tag release
 
 ```bash
-version="$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[] | select(.name == "agent-ui-render") | .version')"
+version="$(
+  cargo metadata --no-deps --format-version 1 |
+    jq -r '.packages[] | select(.name == "agent-ui-render") | .version'
+)"
 git tag "v$version"
 git push origin "v$version"
 ```
@@ -127,6 +131,11 @@ receives a GitHub build-provenance attestation. Verify a downloaded archive with
 ```bash
 gh attestation verify <archive> --repo NeoHsu/agent-ui-render
 ```
+
+Before upload, each cargo-dist archive is checked for unsafe member paths and the
+expected binary. Archives matching the runner platform execute `--version` and a
+bundled-schema smoke. The global shell and PowerShell installers must both exist
+and pass their native syntax parsers.
 
 The global release artifacts also include `agent-ui-render.spdx.json`, generated
 from the pinned Rust and Vue dependency manifests with pinned Syft tooling.
