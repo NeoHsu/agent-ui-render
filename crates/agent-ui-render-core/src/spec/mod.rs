@@ -157,7 +157,7 @@ fn add_view_blocks(blocks: &mut Vec<Value>, input: &Report) {
         } else {
             measures
         };
-        if x.is_none() || y.is_empty() {
+        let (Some(x), false) = (x, y.is_empty()) else {
             blocks.push(json!({
                 "id": format!("table_fallback_{}", slug(&view.data, index + 1)),
                 "type": "table",
@@ -165,7 +165,7 @@ fn add_view_blocks(blocks: &mut Vec<Value>, input: &Report) {
                 "title": view.title.clone().unwrap_or_else(|| format!("{} data", view.intent.replace('_', " "))),
             }));
             continue;
-        }
+        };
         let mut block = Map::new();
         block.insert(
             "id".to_owned(),
@@ -186,7 +186,7 @@ fn add_view_blocks(blocks: &mut Vec<Value>, input: &Report) {
             );
         }
         block.insert("data".to_owned(), json!(view.data));
-        block.insert("x".to_owned(), json!(x.expect("checked")));
+        block.insert("x".to_owned(), json!(x));
         block.insert("y".to_owned(), json!(y));
         if let Some(title) = &view.title {
             block.insert("title".to_owned(), json!(title));

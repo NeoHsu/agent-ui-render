@@ -271,3 +271,8 @@ infoFg
 | 2 | CLI usage error |
 | 3 | Warning treated as error |
 | 4 | IO error |
+
+A closed stdout consumer (for example, `agent-ui-render ... | head`) is treated
+as a successful early stop rather than an IO failure. Human-readable diagnostics
+escape terminal control and bidirectional override characters; JSON mode retains
+structured machine-readable output.

@@ -24,7 +24,10 @@ use crate::{
     },
     error::{EXIT_RUNTIME, EXIT_WARNINGS_AS_ERRORS},
     file_io::{atomic_write_text, replace_vue_handoff},
-    output::{print_extra_warnings, print_findings, print_json, print_validation_result},
+    output::{
+        print_extra_warnings, print_findings, print_human_message, print_json,
+        print_validation_result, write_stdout, write_stdout_line,
+    },
 };
 
 const COMPACT_SCHEMA: &str = include_str!("../../../../schemas/v1/compact.schema.json");
@@ -39,10 +42,10 @@ pub fn validate(command: &InputCommand, global: &GlobalArgs) -> anyhow::Result<(
     let options = validation_options(global)?;
     let payload = read_json(&command.input, options.limits.max_input_bytes)?;
     let report = validate_report_with_options(&payload, &options);
-    print_validation_result(&report, global.output);
+    print_validation_result(&report, global.output)?;
     exit_if_findings_block(&report, global);
     if !global.quiet && global.output == OutputFormat::Human {
-        eprintln!("OK: payload is valid");
+        print_human_message("OK: payload is valid")?;
     }
     Ok(())
 }
@@ -53,7 +56,10 @@ pub fn normalize(command: &IoCommand, global: &GlobalArgs) -> anyhow::Result<()>
     let normalized = validated_normalized_payload(&payload, global, &options)?;
     write_json_or_stdout(command.output_path.as_deref(), &normalized, global.pretty)?;
     if let (false, Some(output_path)) = (global.quiet, &command.output_path) {
-        eprintln!("OK: wrote normalized report to {}", output_path.display());
+        print_human_message(&format!(
+            "OK: wrote normalized report to {}",
+            output_path.display()
+        ))?;
     }
     Ok(())
 }
@@ -65,7 +71,7 @@ pub fn plan(command: &IoCommand, global: &GlobalArgs) -> anyhow::Result<()> {
     let spec = plan_ui_spec(&normalized);
     write_json_or_stdout(command.output_path.as_deref(), &spec, global.pretty)?;
     if let (false, Some(output_path)) = (global.quiet, &command.output_path) {
-        eprintln!("OK: wrote UI spec to {}", output_path.display());
+        print_human_message(&format!("OK: wrote UI spec to {}", output_path.display()))?;
     }
     Ok(())
 }
@@ -83,13 +89,13 @@ pub fn render_html(command: &RenderFileCommand, global: &GlobalArgs) -> anyhow::
         config.document_language(),
     );
     ensure_output_size(&command.output_path, &html, &options)?;
-    warn_if_large_output(&command.output_path, &html, global, &options);
+    warn_if_large_output(&command.output_path, &html, global, &options)?;
     atomic_write_text(&command.output_path, &html)?;
     if !global.quiet {
-        eprintln!(
+        print_human_message(&format!(
             "OK: wrote Vue client HTML to {}",
             command.output_path.display()
-        );
+        ))?;
     }
     Ok(())
 }
@@ -107,10 +113,13 @@ pub fn render_static_html(command: &RenderFileCommand, global: &GlobalArgs) -> a
         config.document_language(),
     );
     ensure_output_size(&command.output_path, &html, &options)?;
-    warn_if_large_output(&command.output_path, &html, global, &options);
+    warn_if_large_output(&command.output_path, &html, global, &options)?;
     atomic_write_text(&command.output_path, &html)?;
     if !global.quiet {
-        eprintln!("OK: wrote static HTML to {}", command.output_path.display());
+        print_human_message(&format!(
+            "OK: wrote static HTML to {}",
+            command.output_path.display()
+        ))?;
     }
     Ok(())
 }
@@ -130,11 +139,11 @@ pub fn render_vue(command: &VueRenderCommand, global: &GlobalArgs) -> anyhow::Re
         command.force,
     )?;
     if !global.quiet {
-        eprintln!(
+        print_human_message(&format!(
             "OK: wrote {} and {}",
             command.output_path.display(),
             renderer_dir.display()
-        );
+        ))?;
     }
     Ok(())
 }
@@ -155,7 +164,7 @@ pub fn schema(command: &SchemaCommand, global: &GlobalArgs) -> anyhow::Result<()
                 let value: Value = serde_json::from_str(source)?;
                 print_json(&value, true)?;
             } else {
-                println!("{source}");
+                write_stdout_line(source)?;
             }
         }
     }
@@ -201,21 +210,22 @@ fn warn_if_large_output(
     content: &str,
     global: &GlobalArgs,
     options: &ValidationOptions,
-) {
+) -> anyhow::Result<()> {
     let max = options.limits.warn_output_html_bytes;
     let bytes = content.len();
     if bytes <= max {
-        return;
+        return Ok(());
     }
     let warning = Finding {
         level: FindingLevel::Warning,
         path: path.display().to_string(),
         message: format!("output size {bytes} bytes exceeds warning threshold {max}"),
     };
-    print_extra_warnings(&[warning], global.output);
+    print_extra_warnings(&[warning], global.output)?;
     if global.warnings_as_errors {
         std::process::exit(EXIT_WARNINGS_AS_ERRORS);
     }
+    Ok(())
 }
 
 fn validated_normalized_payload(
@@ -224,18 +234,18 @@ fn validated_normalized_payload(
     options: &ValidationOptions,
 ) -> anyhow::Result<Report> {
     let initial = validate_report_with_options(payload, options);
-    print_findings(&initial, global.output);
+    print_findings(&initial, global.output)?;
     exit_if_findings_block(&initial, global);
 
     let normalized = normalize_report(payload)?;
-    print_extra_warnings(&normalized.warnings, global.output);
+    print_extra_warnings(&normalized.warnings, global.output)?;
     if global.warnings_as_errors && !normalized.warnings.is_empty() {
         std::process::exit(EXIT_WARNINGS_AS_ERRORS);
     }
 
     let normalized_value = serde_json::to_value(&normalized.input)?;
     let normalized_validation = validate_normalized_report_with_options(&normalized_value, options);
-    print_findings(&normalized_validation, global.output);
+    print_findings(&normalized_validation, global.output)?;
     exit_if_findings_block(&normalized_validation, global);
 
     Ok(normalized.input)
@@ -299,7 +309,7 @@ fn write_json_or_stdout<T: serde::Serialize>(
     if let Some(path) = path {
         atomic_write_text(path, &output)
     } else {
-        print!("{output}");
+        write_stdout(&output)?;
         Ok(())
     }
 }

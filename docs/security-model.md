@@ -104,9 +104,11 @@ config:
 
 Input reads stop at `maxInputBytes + 1` instead of buffering unbounded stdin.
 Validation caps retained diagnostics and dataset work, and fails closed for
-oversized or structurally invalid payloads. Render commands warn when generated
-HTML exceeds `warnOutputHtmlBytes`; with `--warnings-as-errors`, this blocks the
-command. Output above `maxOutputHtmlBytes` is always rejected before writing.
+oversized or structurally invalid payloads. Human CLI diagnostics escape terminal
+control and bidirectional override characters before reaching stderr. Render
+commands warn when generated HTML exceeds `warnOutputHtmlBytes`; with
+`--warnings-as-errors`, this blocks the command. Output above
+`maxOutputHtmlBytes` is always rejected before writing.
 
 Trusted config may also set `themeTokens` for renderer colors and
 `documentLanguage` for the generated HTML `lang` attribute. Theme token values

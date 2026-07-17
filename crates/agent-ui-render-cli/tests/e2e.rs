@@ -6,6 +6,56 @@ use std::{
 };
 
 #[test]
+fn closed_stdout_pipe_exits_successfully() -> Result<(), Box<dyn std::error::Error>> {
+    let input = workspace_root()?.join("examples/revenue-overview.input.json");
+    let payload = fs::read(input)?;
+    let mut child = Command::new(env!("CARGO_BIN_EXE_agent-ui-render"))
+        .args(["normalize", "-"])
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()?;
+
+    drop(child.stdout.take());
+    let mut stdin = child
+        .stdin
+        .take()
+        .ok_or_else(|| io::Error::other("child stdin should be piped"))?;
+    stdin.write_all(&payload)?;
+    drop(stdin);
+
+    let output = child.wait_with_output()?;
+    assert!(
+        output.status.success(),
+        "broken pipe should exit successfully: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert!(output.stderr.is_empty());
+    Ok(())
+}
+
+#[test]
+fn human_errors_escape_terminal_controls() -> Result<(), Box<dyn std::error::Error>> {
+    let temp = tempfile::tempdir()?;
+    let malicious_config = temp.path().join("missing\u{1b}[31m\rFORGED.json");
+    let input = workspace_root()?.join("examples/revenue-overview.input.json");
+    let output = Command::new(env!("CARGO_BIN_EXE_agent-ui-render"))
+        .arg("--config")
+        .arg(malicious_config)
+        .arg("validate")
+        .arg(input)
+        .output()?;
+
+    assert!(!output.status.success());
+    let stderr = String::from_utf8(output.stderr)?;
+    assert!(!stderr.contains('\u{1b}'));
+    assert!(!stderr.contains('\r'));
+    assert!(stderr.contains(r"\u{1b}"));
+    assert!(stderr.contains(r"\rFORGED"));
+    Ok(())
+}
+
+#[test]
 fn renders_html_from_example() -> Result<(), Box<dyn std::error::Error>> {
     let temp = tempfile::tempdir()?;
     let output = temp.path().join("report.html");

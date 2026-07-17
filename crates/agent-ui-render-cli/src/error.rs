@@ -1,12 +1,23 @@
 use anyhow::Error;
 use serde_json::json;
 
-use crate::cli::OutputFormat;
+use crate::{
+    cli::OutputFormat,
+    output::{StdoutWriteError, print_human_message, write_stderr_line},
+};
 
 pub const EXIT_RUNTIME: i32 = 1;
 pub const EXIT_USAGE: i32 = 2;
 pub const EXIT_WARNINGS_AS_ERRORS: i32 = 3;
 pub const EXIT_IO: i32 = 4;
+
+pub fn is_broken_pipe(error: &Error) -> bool {
+    error.chain().any(|cause| {
+        cause
+            .downcast_ref::<StdoutWriteError>()
+            .is_some_and(StdoutWriteError::is_broken_pipe)
+    })
+}
 
 pub fn classify_exit_code(error: &Error) -> i32 {
     if error
@@ -29,12 +40,11 @@ pub fn exit_with(error: Error, output: OutputFormat, code: i32) -> ! {
                 "retryable": false
             }
         });
-        eprintln!(
-            "{}",
-            serde_json::to_string_pretty(&payload).unwrap_or_else(|_| payload.to_string())
-        );
+        let message =
+            serde_json::to_string_pretty(&payload).unwrap_or_else(|_| payload.to_string());
+        let _ = write_stderr_line(&message);
     } else {
-        eprintln!("Error: {error:#}");
+        let _ = print_human_message(&format!("Error: {error:#}"));
     }
     std::process::exit(code);
 }
