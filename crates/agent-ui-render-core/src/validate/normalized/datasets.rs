@@ -55,7 +55,11 @@ pub(super) fn validate_normalized_dataset(
     );
     let mut columns = Vec::new();
     let mut seen = BTreeSet::new();
-    for (index, column) in columns_array.iter().enumerate() {
+    for (index, column) in columns_array
+        .iter()
+        .take(limits.max_columns_per_dataset)
+        .enumerate()
+    {
         if let Some(info) =
             validate_normalized_column(column, &format!("{path}.columns[{index}]"), limits, report)
         {
@@ -68,7 +72,7 @@ pub(super) fn validate_normalized_dataset(
             columns.push(info);
         }
     }
-    let rows = if let Some(rows_value) = object.get("rows") {
+    let validated_rows = if let Some(rows_value) = object.get("rows") {
         validate_row_major(
             rows_value,
             &format!("{path}.rows"),
@@ -78,11 +82,13 @@ pub(super) fn validate_normalized_dataset(
         )
     } else {
         report.error(format!("{path}.rows"), "dataset must include rows");
-        Vec::new()
+        Default::default()
     };
     Some(DatasetInfo {
         columns,
-        rows,
+        rows: validated_rows.rows,
+        row_count: validated_rows.row_count,
+        cell_count: validated_rows.cell_count,
         materialized: true,
     })
 }

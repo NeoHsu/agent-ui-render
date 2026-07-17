@@ -8,8 +8,8 @@ use crate::{diagnostic::ValidationReport, options::Limits, wire::compact};
 
 use super::{
     shared::{
-        validate_presentation_options, validate_string_array, validate_string_length,
-        validate_unknown_fields,
+        validate_dataset_totals, validate_presentation_options, validate_string_array,
+        validate_string_length, validate_unknown_fields,
     },
     unsafe_content::collect_unsafe_string_paths,
 };
@@ -19,7 +19,7 @@ use views::validate_compact_views;
 
 #[must_use]
 pub(super) fn validate_compact_report(value: &Value, limits: &Limits) -> ValidationReport {
-    let mut report = ValidationReport::default();
+    let mut report = ValidationReport::with_max_findings(limits.max_findings);
     let Some(object) = value.as_object() else {
         report.error("$", "top-level value must be an object");
         return report;
@@ -54,6 +54,7 @@ pub(super) fn validate_compact_report(value: &Value, limits: &Limits) -> Validat
 
     let dictionaries = validate_dictionaries(object.get("dict"), limits, &mut report);
     let datasets = validate_compact_datasets(object.get("d"), &dictionaries, limits, &mut report);
+    validate_dataset_totals(datasets.iter(), "$.d", limits, &mut report);
 
     validate_compact_metrics(object.get("m"), limits, &mut report);
     validate_string_array("i", object.get("i"), limits, &mut report);
@@ -68,7 +69,8 @@ pub(super) fn validate_compact_report(value: &Value, limits: &Limits) -> Validat
     validate_compact_alerts(object.get("a"), limits, &mut report);
     validate_compact_markdown(object.get("md"), limits, &mut report);
 
-    for path in collect_unsafe_string_paths(value) {
+    let unsafe_paths = collect_unsafe_string_paths(value, report.remaining_error_capacity());
+    for path in unsafe_paths {
         report.error(
             path.clone(),
             format!("unsafe UI/code content detected at {path}"),

@@ -14,7 +14,16 @@ pub(super) struct ColumnInfo {
 pub(super) struct DatasetInfo {
     pub(super) columns: Vec<ColumnInfo>,
     pub(super) rows: Vec<Vec<Value>>,
+    pub(super) row_count: usize,
+    pub(super) cell_count: usize,
     pub(super) materialized: bool,
+}
+
+#[derive(Debug, Clone, Default)]
+pub(super) struct ValidatedRows {
+    pub(super) rows: Vec<Vec<Value>>,
+    pub(super) row_count: usize,
+    pub(super) cell_count: usize,
 }
 
 pub(super) fn validate_presentation_options(
@@ -53,32 +62,28 @@ pub(super) fn validate_row_major(
     column_count: usize,
     limits: &Limits,
     report: &mut ValidationReport,
-) -> Vec<Vec<Value>> {
+) -> ValidatedRows {
     let Some(rows) = value.as_array() else {
         report.error(path, "row data must be an array of row arrays");
-        return Vec::new();
+        return ValidatedRows::default();
     };
-    validate_count(
-        rows.len(),
-        limits.max_rows_per_dataset,
-        path,
-        "rows",
-        report,
-    );
-    let actual_cells = rows
+    let row_count = rows.len();
+    validate_count(row_count, limits.max_rows_per_dataset, path, "rows", report);
+    let cell_count = rows
         .iter()
         .filter_map(Value::as_array)
-        .map(Vec::len)
-        .sum::<usize>();
+        .fold(0usize, |total, row| total.saturating_add(row.len()));
     validate_count(
-        actual_cells,
+        cell_count,
         limits.max_cells_per_dataset,
         path,
         "cells",
         report,
     );
+
     let mut result = Vec::new();
-    for (row_index, row) in rows.iter().enumerate() {
+    let mut inspected_cells = 0usize;
+    for (row_index, row) in rows.iter().take(limits.max_rows_per_dataset).enumerate() {
         let row_path = format!("{path}[{row_index}]");
         let Some(cells) = row.as_array() else {
             report.error(row_path, "dataset row must be an array");
@@ -93,7 +98,8 @@ pub(super) fn validate_row_major(
                 ),
             );
         }
-        for (cell_index, cell) in cells.iter().enumerate() {
+        let remaining_cells = limits.max_cells_per_dataset.saturating_sub(inspected_cells);
+        for (cell_index, cell) in cells.iter().take(remaining_cells).enumerate() {
             let cell_path = format!("{row_path}[{cell_index}]");
             if !is_primitive(cell) {
                 report.error(
@@ -110,9 +116,33 @@ pub(super) fn validate_row_major(
                 );
             }
         }
-        result.push(cells.clone());
+        let retained_cells = remaining_cells.min(cells.len()).min(column_count);
+        inspected_cells = inspected_cells.saturating_add(remaining_cells.min(cells.len()));
+        result.push(cells.iter().take(retained_cells).cloned().collect());
     }
-    result
+    ValidatedRows {
+        rows: result,
+        row_count,
+        cell_count,
+    }
+}
+
+pub(super) fn validate_dataset_totals<'a>(
+    datasets: impl IntoIterator<Item = &'a DatasetInfo>,
+    path: &str,
+    limits: &Limits,
+    report: &mut ValidationReport,
+) {
+    let (rows, cells) = datasets
+        .into_iter()
+        .fold((0usize, 0usize), |totals, dataset| {
+            (
+                totals.0.saturating_add(dataset.row_count),
+                totals.1.saturating_add(dataset.cell_count),
+            )
+        });
+    validate_count(rows, limits.max_total_rows, path, "total rows", report);
+    validate_count(cells, limits.max_total_cells, path, "total cells", report);
 }
 
 pub(super) fn validate_string_array(

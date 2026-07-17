@@ -10,8 +10,8 @@ use crate::{diagnostic::ValidationReport, domain, options::ValidationOptions};
 
 use super::{
     shared::{
-        DatasetInfo, validate_count, validate_presentation_options, validate_string_array,
-        validate_string_length, validate_unknown_fields,
+        DatasetInfo, validate_count, validate_dataset_totals, validate_presentation_options,
+        validate_string_array, validate_string_length, validate_unknown_fields,
     },
     unsafe_content::collect_unsafe_string_paths,
 };
@@ -44,7 +44,7 @@ pub(super) fn validate_normalized_report_with_options(
     options: &ValidationOptions,
 ) -> ValidationReport {
     let limits = &options.limits;
-    let mut report = ValidationReport::default();
+    let mut report = ValidationReport::with_max_findings(limits.max_findings);
     let Some(object) = value.as_object() else {
         report.error("$", "top-level value must be an object");
         return report;
@@ -107,7 +107,7 @@ pub(super) fn validate_normalized_report_with_options(
             "datasets",
             &mut report,
         );
-        for (dataset_id, dataset) in datasets {
+        for (dataset_id, dataset) in datasets.iter().take(limits.max_datasets) {
             let path = format!("$.datasets.{dataset_id}");
             if let Some(info) =
                 validate_normalized_dataset(dataset_id, dataset, &path, limits, &mut report)
@@ -116,6 +116,7 @@ pub(super) fn validate_normalized_report_with_options(
             }
         }
     }
+    validate_dataset_totals(datasets_info.values(), "$.datasets", limits, &mut report);
 
     validate_normalized_metrics(object.get("metrics"), limits, &mut report);
     validate_string_array("insights", object.get("insights"), limits, &mut report);
@@ -135,7 +136,8 @@ pub(super) fn validate_normalized_report_with_options(
     );
     validate_normalized_alerts(object.get("alerts"), limits, &mut report);
 
-    for path in collect_unsafe_string_paths(value) {
+    let unsafe_paths = collect_unsafe_string_paths(value, report.remaining_error_capacity());
+    for path in unsafe_paths {
         report.error(
             path.clone(),
             format!("unsafe UI/code content detected at {path}"),

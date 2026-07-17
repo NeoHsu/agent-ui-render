@@ -155,7 +155,11 @@ from the untrusted input payload.
     "maxInputBytes": 5242880,
     "maxRowsPerDataset": 2000,
     "maxCellsPerDataset": 100000,
-    "warnOutputHtmlBytes": 5242880
+    "maxTotalRows": 20000,
+    "maxTotalCells": 250000,
+    "maxFindings": 200,
+    "warnOutputHtmlBytes": 5242880,
+    "maxOutputHtmlBytes": 10485760
   },
   "themeTokens": {
     "page": "#0b1220",
@@ -181,9 +185,13 @@ Available limit keys:
 ```text
 maxInputBytes
 maxDatasets
+maxDictionaries
+maxDictionaryEntries
 maxColumnsPerDataset
 maxRowsPerDataset
 maxCellsPerDataset
+maxTotalRows
+maxTotalCells
 maxMetrics
 maxViews
 maxAlerts
@@ -191,7 +199,9 @@ maxMarkdownSections
 maxStringChars
 maxMarkdownSectionChars
 maxTotalMarkdownChars
+maxFindings
 warnOutputHtmlBytes
+maxOutputHtmlBytes
 ```
 
 Available theme token keys:

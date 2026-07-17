@@ -1,5 +1,5 @@
 use std::{
-    fs,
+    fs::{self, File},
     io::{self, Read},
     path::Path,
 };
@@ -77,6 +77,7 @@ pub fn render_html(command: &RenderFileCommand, global: &GlobalArgs) -> anyhow::
     let payload = read_json(&command.input, options.limits.max_input_bytes)?;
     let normalized = validated_normalized_payload(&payload, global, &options)?;
     let html = render_vue_html_shell_with_theme_tokens(&normalized, &config.theme_tokens);
+    ensure_output_size(&command.output_path, &html, &options)?;
     warn_if_large_output(&command.output_path, &html, global, &options);
     write_text_file(&command.output_path, &html)?;
     if !global.quiet {
@@ -96,6 +97,7 @@ pub fn render_static_html(command: &RenderFileCommand, global: &GlobalArgs) -> a
     let payload = read_json(&command.input, options.limits.max_input_bytes)?;
     let normalized = validated_normalized_payload(&payload, global, &options)?;
     let html = render_static_html_document(&normalized, &config.theme_tokens);
+    ensure_output_size(&command.output_path, &html, &options)?;
     warn_if_large_output(&command.output_path, &html, global, &options);
     write_text_file(&command.output_path, &html)?;
     if !global.quiet {
@@ -179,6 +181,22 @@ fn runtime_config(global: &GlobalArgs) -> anyhow::Result<RuntimeConfig> {
     Ok(config)
 }
 
+fn ensure_output_size(
+    path: &Path,
+    content: &str,
+    options: &ValidationOptions,
+) -> anyhow::Result<()> {
+    let bytes = content.len();
+    let max = options.limits.max_output_html_bytes;
+    if bytes > max {
+        anyhow::bail!(
+            "output {} is {bytes} bytes, exceeding configured maxOutputHtmlBytes {max}",
+            path.display()
+        );
+    }
+    Ok(())
+}
+
 fn warn_if_large_output(
     path: &Path,
     content: &str,
@@ -235,24 +253,33 @@ fn exit_if_findings_block(report: &ValidationReport, global: &GlobalArgs) {
 
 fn read_json(path: &str, max_input_bytes: usize) -> anyhow::Result<Value> {
     let source = if path == "-" {
-        let mut source = String::new();
-        io::stdin()
-            .read_to_string(&mut source)
-            .context("failed to read stdin")?;
-        ensure_input_size(path, source.len(), max_input_bytes)?;
-        source
+        read_bounded(io::stdin().lock(), path, max_input_bytes).context("failed to read stdin")?
     } else {
         let metadata = fs::metadata(path).with_context(|| format!("failed to stat {path}"))?;
-        ensure_input_size(path, metadata.len() as usize, max_input_bytes)?;
-        let source = fs::read_to_string(path).with_context(|| format!("failed to read {path}"))?;
-        ensure_input_size(path, source.len(), max_input_bytes)?;
-        source
+        ensure_input_size(path, metadata.len(), max_input_bytes)?;
+        let file = File::open(path).with_context(|| format!("failed to open {path}"))?;
+        read_bounded(file, path, max_input_bytes)
+            .with_context(|| format!("failed to read {path}"))?
     };
-    serde_json::from_str(&source).with_context(|| format!("failed to parse JSON from {path}"))
+    serde_json::from_slice(&source).with_context(|| format!("failed to parse JSON from {path}"))
 }
 
-fn ensure_input_size(path: &str, bytes: usize, max_input_bytes: usize) -> anyhow::Result<()> {
-    if bytes > max_input_bytes {
+fn read_bounded(reader: impl Read, path: &str, max_input_bytes: usize) -> anyhow::Result<Vec<u8>> {
+    let read_limit = u64::try_from(max_input_bytes)
+        .unwrap_or(u64::MAX)
+        .saturating_add(1);
+    let mut source = Vec::new();
+    reader.take(read_limit).read_to_end(&mut source)?;
+    ensure_input_size(
+        path,
+        u64::try_from(source.len()).unwrap_or(u64::MAX),
+        max_input_bytes,
+    )?;
+    Ok(source)
+}
+
+fn ensure_input_size(path: &str, bytes: u64, max_input_bytes: usize) -> anyhow::Result<()> {
+    if bytes > u64::try_from(max_input_bytes).unwrap_or(u64::MAX) {
         anyhow::bail!(
             "input {path} is {bytes} bytes, exceeding configured maxInputBytes {max_input_bytes}"
         );

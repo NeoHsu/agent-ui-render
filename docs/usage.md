@@ -170,7 +170,11 @@ agent-ui-render --config agent-ui-render.config.json render html input.json repo
     "maxInputBytes": 5242880,
     "maxRowsPerDataset": 2000,
     "maxCellsPerDataset": 100000,
-    "warnOutputHtmlBytes": 5242880
+    "maxTotalRows": 20000,
+    "maxTotalCells": 250000,
+    "maxFindings": 200,
+    "warnOutputHtmlBytes": 5242880,
+    "maxOutputHtmlBytes": 10485760
   },
   "themeTokens": {
     "page": "#0b1220",

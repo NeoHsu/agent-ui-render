@@ -1,13 +1,16 @@
 use serde_json::Value;
 
 #[must_use]
-pub fn collect_unsafe_string_paths(value: &Value) -> Vec<String> {
+pub fn collect_unsafe_string_paths(value: &Value, max_paths: usize) -> Vec<String> {
     let mut paths = Vec::new();
-    collect(value, "$".to_owned(), &mut paths);
+    collect(value, "$".to_owned(), max_paths, &mut paths);
     paths
 }
 
-fn collect(value: &Value, path: String, paths: &mut Vec<String>) {
+fn collect(value: &Value, path: String, max_paths: usize, paths: &mut Vec<String>) {
+    if paths.len() >= max_paths {
+        return;
+    }
     match value {
         Value::String(text) => {
             if is_unsafe_text(text) {
@@ -16,12 +19,18 @@ fn collect(value: &Value, path: String, paths: &mut Vec<String>) {
         }
         Value::Array(items) => {
             for (index, item) in items.iter().enumerate() {
-                collect(item, format!("{path}[{index}]"), paths);
+                collect(item, format!("{path}[{index}]"), max_paths, paths);
+                if paths.len() >= max_paths {
+                    break;
+                }
             }
         }
         Value::Object(map) => {
             for (key, item) in map {
-                collect(item, format!("{path}.{key}"), paths);
+                collect(item, format!("{path}.{key}"), max_paths, paths);
+                if paths.len() >= max_paths {
+                    break;
+                }
             }
         }
         _ => {}

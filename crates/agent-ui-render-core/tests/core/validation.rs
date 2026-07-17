@@ -80,6 +80,8 @@ fn payload_size_limits_cover_core_guardrails() {
             max_columns_per_dataset: 1,
             max_rows_per_dataset: 1,
             max_cells_per_dataset: 1,
+            max_total_rows: 1,
+            max_total_cells: 1,
             max_string_chars: 3,
             max_markdown_sections: 1,
             max_markdown_section_chars: 5,
@@ -100,6 +102,8 @@ fn payload_size_limits_cover_core_guardrails() {
         "columns count 2 exceeds max 1",
         "rows count 2 exceeds max 1",
         "cells count 4 exceeds max 1",
+        "total rows count 2 exceeds max 1",
+        "total cells count 4 exceeds max 1",
         "field 't' length 4 chars exceeds max 3",
         "markdown sections count 2 exceeds max 1",
         "markdown entry length 6 chars exceeds max 5",
@@ -110,6 +114,37 @@ fn payload_size_limits_cover_core_guardrails() {
             "missing {expected:?} in\n{messages}"
         );
     }
+}
+
+#[test]
+fn diagnostic_budget_bounds_adversarial_payloads() {
+    let payload = json!({
+        "version": 1,
+        "d": [[
+            "rows",
+            [["value", "s"]],
+            (0..10_000).map(|_| json!([])).collect::<Vec<_>>()
+        ]]
+    });
+    let options = ValidationOptions {
+        limits: Limits {
+            max_rows_per_dataset: 20_000,
+            max_findings: 10,
+            ..Limits::default()
+        },
+    };
+
+    let report = validate_report_with_options(&payload, &options);
+    assert!(!report.is_ok());
+    assert!(report.errors.len() <= 11, "{:#?}", report.errors);
+    assert!(
+        report
+            .errors
+            .iter()
+            .any(|finding| finding.message.contains("diagnostic limit 10 reached")),
+        "{:#?}",
+        report.errors
+    );
 }
 
 #[test]

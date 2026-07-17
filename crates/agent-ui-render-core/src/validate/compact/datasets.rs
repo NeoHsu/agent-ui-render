@@ -5,8 +5,8 @@ use serde_json::Value;
 use crate::{diagnostic::ValidationReport, options::Limits, wire::compact};
 
 use super::super::shared::{
-    ColumnInfo, DatasetInfo, is_primitive, is_recommended_id, is_type_code, validate_count,
-    validate_dataset_id, validate_row_major, validate_string_length,
+    ColumnInfo, DatasetInfo, ValidatedRows, is_primitive, is_recommended_id, is_type_code,
+    validate_count, validate_dataset_id, validate_row_major, validate_string_length,
 };
 
 pub(super) fn validate_dictionaries(
@@ -22,7 +22,26 @@ pub(super) fn validate_dictionaries(
         report.error("$.dict", "field 'dict' must be an object when present");
         return dictionaries;
     };
-    for (dict_id, entries) in object {
+    validate_count(
+        object.len(),
+        limits.max_dictionaries,
+        "$.dict",
+        "dictionaries",
+        report,
+    );
+    let total_entries = object
+        .values()
+        .filter_map(Value::as_array)
+        .fold(0usize, |total, entries| total.saturating_add(entries.len()));
+    validate_count(
+        total_entries,
+        limits.max_dictionary_entries,
+        "$.dict",
+        "dictionary entries",
+        report,
+    );
+    let mut retained_entries = 0usize;
+    for (dict_id, entries) in object.iter().take(limits.max_dictionaries) {
         validate_string_length(
             dict_id,
             &format!("$.dict.{dict_id}"),
@@ -44,7 +63,10 @@ pub(super) fn validate_dictionaries(
             continue;
         };
         let mut strings = Vec::new();
-        for (index, item) in array.iter().enumerate() {
+        let remaining_entries = limits
+            .max_dictionary_entries
+            .saturating_sub(retained_entries);
+        for (index, item) in array.iter().take(remaining_entries).enumerate() {
             if let Some(text) = item.as_str() {
                 validate_string_length(
                     text,
@@ -61,6 +83,7 @@ pub(super) fn validate_dictionaries(
                 );
             }
         }
+        retained_entries = retained_entries.saturating_add(remaining_entries.min(array.len()));
         dictionaries.insert(dict_id.clone(), strings);
     }
     dictionaries
@@ -89,6 +112,7 @@ pub(super) fn validate_compact_datasets(
     let mut seen_ids = BTreeSet::new();
     datasets
         .iter()
+        .take(limits.max_datasets)
         .enumerate()
         .filter_map(|(index, dataset)| {
             validate_compact_dataset(
@@ -160,6 +184,8 @@ fn validate_compact_dataset(
             Some(DatasetInfo {
                 columns: Vec::new(),
                 rows: Vec::new(),
+                row_count: 0,
+                cell_count: 0,
                 materialized: false,
             })
         }
@@ -177,7 +203,7 @@ fn validate_compact_dataset(
                 limits,
                 report,
             );
-            let rows = validate_column_major(
+            let validated_rows = validate_column_major(
                 tuple.get(3).unwrap_or(&Value::Null),
                 &format!("{path}[3]"),
                 columns.len(),
@@ -186,7 +212,9 @@ fn validate_compact_dataset(
             );
             Some(DatasetInfo {
                 columns,
-                rows,
+                rows: validated_rows.rows,
+                row_count: validated_rows.row_count,
+                cell_count: validated_rows.cell_count,
                 materialized: true,
             })
         }
@@ -208,7 +236,7 @@ fn validate_compact_dataset(
                 limits,
                 report,
             );
-            let rows = validate_row_major(
+            let validated_rows = validate_row_major(
                 tuple.get(2).unwrap_or(&Value::Null),
                 &format!("{path}[2]"),
                 columns.len(),
@@ -217,7 +245,9 @@ fn validate_compact_dataset(
             );
             Some(DatasetInfo {
                 columns,
-                rows,
+                rows: validated_rows.rows,
+                row_count: validated_rows.row_count,
+                cell_count: validated_rows.cell_count,
                 materialized: true,
             })
         }
@@ -251,7 +281,11 @@ fn validate_compact_columns(
     );
     let mut seen = BTreeSet::new();
     let mut columns = Vec::new();
-    for (index, column) in columns_array.iter().enumerate() {
+    for (index, column) in columns_array
+        .iter()
+        .take(limits.max_columns_per_dataset)
+        .enumerate()
+    {
         if let Some(info) = validate_compact_column(
             column,
             &format!("{path}[{index}]"),
@@ -369,10 +403,10 @@ fn validate_column_major(
     column_count: usize,
     limits: &Limits,
     report: &mut ValidationReport,
-) -> Vec<Vec<Value>> {
+) -> ValidatedRows {
     let Some(columns) = value.as_array() else {
         report.error(path, "column-major data must be an array of column arrays");
-        return Vec::new();
+        return ValidatedRows::default();
     };
     if columns.len() != column_count {
         report.error(
@@ -383,13 +417,12 @@ fn validate_column_major(
             ),
         );
     }
-    let actual_cells = columns
+    let cell_count = columns
         .iter()
         .filter_map(Value::as_array)
-        .map(Vec::len)
-        .sum::<usize>();
+        .fold(0usize, |total, column| total.saturating_add(column.len()));
     validate_count(
-        actual_cells,
+        cell_count,
         limits.max_cells_per_dataset,
         path,
         "cells",
@@ -397,7 +430,12 @@ fn validate_column_major(
     );
     let mut column_values = Vec::new();
     let mut row_count: Option<usize> = None;
-    for (column_index, column) in columns.iter().enumerate() {
+    let mut inspected_cells = 0usize;
+    for (column_index, column) in columns
+        .iter()
+        .take(limits.max_columns_per_dataset)
+        .enumerate()
+    {
         let column_path = format!("{path}[{column_index}]");
         let Some(cells) = column.as_array() else {
             report.error(column_path, "column-major entry must be an array");
@@ -423,7 +461,11 @@ fn validate_column_major(
                 report,
             );
         }
-        for (cell_index, cell) in cells.iter().enumerate() {
+        let remaining_cells = limits.max_cells_per_dataset.saturating_sub(inspected_cells);
+        let retained_cells = remaining_cells
+            .min(cells.len())
+            .min(limits.max_rows_per_dataset);
+        for (cell_index, cell) in cells.iter().take(retained_cells).enumerate() {
             let cell_path = format!("{column_path}[{cell_index}]");
             if !is_primitive(cell) {
                 report.error(
@@ -440,16 +482,28 @@ fn validate_column_major(
                 );
             }
         }
-        column_values.push(cells.clone());
+        inspected_cells = inspected_cells.saturating_add(retained_cells);
+        column_values.push(
+            cells
+                .iter()
+                .take(retained_cells)
+                .cloned()
+                .collect::<Vec<_>>(),
+        );
     }
 
-    let rows = row_count.unwrap_or(0);
-    (0..rows)
+    let retained_rows = row_count.unwrap_or(0).min(limits.max_rows_per_dataset);
+    let rows = (0..retained_rows)
         .map(|row_index| {
             column_values
                 .iter()
                 .map(|column| column.get(row_index).cloned().unwrap_or(Value::Null))
                 .collect()
         })
-        .collect()
+        .collect();
+    ValidatedRows {
+        rows,
+        row_count: row_count.unwrap_or(0),
+        cell_count,
+    }
 }

@@ -84,8 +84,9 @@ Actions:
 Symptoms:
 
 - Input is too large.
-- Too many datasets, rows, cells, metrics, views, alerts, or markdown sections.
-- Render warns about generated HTML size.
+- Too many datasets, dictionaries, rows, cells, metrics, views, alerts, diagnostics, or markdown sections.
+- Total rows or cells exceed the cross-dataset budget.
+- Render warns about generated HTML size or rejects the hard output-size limit.
 
 Actions:
 

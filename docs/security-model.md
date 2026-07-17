@@ -83,9 +83,13 @@ config:
 
 - `maxInputBytes`
 - `maxDatasets`
+- `maxDictionaries`
+- `maxDictionaryEntries`
 - `maxColumnsPerDataset`
 - `maxRowsPerDataset`
 - `maxCellsPerDataset`
+- `maxTotalRows`
+- `maxTotalCells`
 - `maxMetrics`
 - `maxViews`
 - `maxAlerts`
@@ -93,11 +97,15 @@ config:
 - `maxStringChars`
 - `maxMarkdownSectionChars`
 - `maxTotalMarkdownChars`
+- `maxFindings`
 - `warnOutputHtmlBytes`
+- `maxOutputHtmlBytes`
 
-Validation fails closed for oversized or structurally invalid payloads. Render
-commands warn when generated HTML exceeds `warnOutputHtmlBytes`; with
-`--warnings-as-errors`, this blocks the command.
+Input reads stop at `maxInputBytes + 1` instead of buffering unbounded stdin.
+Validation caps retained diagnostics and dataset work, and fails closed for
+oversized or structurally invalid payloads. Render commands warn when generated
+HTML exceeds `warnOutputHtmlBytes`; with `--warnings-as-errors`, this blocks the
+command. Output above `maxOutputHtmlBytes` is always rejected before writing.
 
 Trusted config may also set `themeTokens` for renderer colors. Theme token values
 are validated as safe CSS color literals before render output is written; raw CSS

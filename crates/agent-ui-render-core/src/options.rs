@@ -7,9 +7,13 @@ use serde::{Deserialize, Serialize};
 pub struct Limits {
     pub max_input_bytes: usize,
     pub max_datasets: usize,
+    pub max_dictionaries: usize,
+    pub max_dictionary_entries: usize,
     pub max_columns_per_dataset: usize,
     pub max_rows_per_dataset: usize,
     pub max_cells_per_dataset: usize,
+    pub max_total_rows: usize,
+    pub max_total_cells: usize,
     pub max_metrics: usize,
     pub max_views: usize,
     pub max_alerts: usize,
@@ -17,7 +21,9 @@ pub struct Limits {
     pub max_string_chars: usize,
     pub max_markdown_section_chars: usize,
     pub max_total_markdown_chars: usize,
+    pub max_findings: usize,
     pub warn_output_html_bytes: usize,
+    pub max_output_html_bytes: usize,
 }
 
 impl Default for Limits {
@@ -25,9 +31,13 @@ impl Default for Limits {
         Self {
             max_input_bytes: 5 * 1024 * 1024,
             max_datasets: 20,
+            max_dictionaries: 20,
+            max_dictionary_entries: 100_000,
             max_columns_per_dataset: 50,
             max_rows_per_dataset: 2_000,
             max_cells_per_dataset: 100_000,
+            max_total_rows: 20_000,
+            max_total_cells: 250_000,
             max_metrics: 50,
             max_views: 50,
             max_alerts: 50,
@@ -35,7 +45,9 @@ impl Default for Limits {
             max_string_chars: 20_000,
             max_markdown_section_chars: 50_000,
             max_total_markdown_chars: 200_000,
+            max_findings: 200,
             warn_output_html_bytes: 5 * 1024 * 1024,
+            max_output_html_bytes: 10 * 1024 * 1024,
         }
     }
 }
@@ -78,9 +90,13 @@ impl RuntimeConfig {
 pub struct LimitOverrides {
     pub max_input_bytes: Option<usize>,
     pub max_datasets: Option<usize>,
+    pub max_dictionaries: Option<usize>,
+    pub max_dictionary_entries: Option<usize>,
     pub max_columns_per_dataset: Option<usize>,
     pub max_rows_per_dataset: Option<usize>,
     pub max_cells_per_dataset: Option<usize>,
+    pub max_total_rows: Option<usize>,
+    pub max_total_cells: Option<usize>,
     pub max_metrics: Option<usize>,
     pub max_views: Option<usize>,
     pub max_alerts: Option<usize>,
@@ -88,13 +104,20 @@ pub struct LimitOverrides {
     pub max_string_chars: Option<usize>,
     pub max_markdown_section_chars: Option<usize>,
     pub max_total_markdown_chars: Option<usize>,
+    pub max_findings: Option<usize>,
     pub warn_output_html_bytes: Option<usize>,
+    pub max_output_html_bytes: Option<usize>,
 }
 
 impl LimitOverrides {
     fn apply_to(self, limits: &mut Limits) {
         apply(self.max_input_bytes, &mut limits.max_input_bytes);
         apply(self.max_datasets, &mut limits.max_datasets);
+        apply(self.max_dictionaries, &mut limits.max_dictionaries);
+        apply(
+            self.max_dictionary_entries,
+            &mut limits.max_dictionary_entries,
+        );
         apply(
             self.max_columns_per_dataset,
             &mut limits.max_columns_per_dataset,
@@ -104,6 +127,8 @@ impl LimitOverrides {
             self.max_cells_per_dataset,
             &mut limits.max_cells_per_dataset,
         );
+        apply(self.max_total_rows, &mut limits.max_total_rows);
+        apply(self.max_total_cells, &mut limits.max_total_cells);
         apply(self.max_metrics, &mut limits.max_metrics);
         apply(self.max_views, &mut limits.max_views);
         apply(self.max_alerts, &mut limits.max_alerts);
@@ -120,9 +145,14 @@ impl LimitOverrides {
             self.max_total_markdown_chars,
             &mut limits.max_total_markdown_chars,
         );
+        apply(self.max_findings, &mut limits.max_findings);
         apply(
             self.warn_output_html_bytes,
             &mut limits.warn_output_html_bytes,
+        );
+        apply(
+            self.max_output_html_bytes,
+            &mut limits.max_output_html_bytes,
         );
     }
 }

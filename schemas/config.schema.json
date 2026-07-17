@@ -11,9 +11,13 @@
       "properties": {
         "maxInputBytes": { "$ref": "#/$defs/nonNegativeInteger" },
         "maxDatasets": { "$ref": "#/$defs/nonNegativeInteger" },
+        "maxDictionaries": { "$ref": "#/$defs/nonNegativeInteger" },
+        "maxDictionaryEntries": { "$ref": "#/$defs/nonNegativeInteger" },
         "maxColumnsPerDataset": { "$ref": "#/$defs/nonNegativeInteger" },
         "maxRowsPerDataset": { "$ref": "#/$defs/nonNegativeInteger" },
         "maxCellsPerDataset": { "$ref": "#/$defs/nonNegativeInteger" },
+        "maxTotalRows": { "$ref": "#/$defs/nonNegativeInteger" },
+        "maxTotalCells": { "$ref": "#/$defs/nonNegativeInteger" },
         "maxMetrics": { "$ref": "#/$defs/nonNegativeInteger" },
         "maxViews": { "$ref": "#/$defs/nonNegativeInteger" },
         "maxAlerts": { "$ref": "#/$defs/nonNegativeInteger" },
@@ -21,7 +25,9 @@
         "maxStringChars": { "$ref": "#/$defs/nonNegativeInteger" },
         "maxMarkdownSectionChars": { "$ref": "#/$defs/nonNegativeInteger" },
         "maxTotalMarkdownChars": { "$ref": "#/$defs/nonNegativeInteger" },
-        "warnOutputHtmlBytes": { "$ref": "#/$defs/nonNegativeInteger" }
+        "maxFindings": { "$ref": "#/$defs/nonNegativeInteger" },
+        "warnOutputHtmlBytes": { "$ref": "#/$defs/nonNegativeInteger" },
+        "maxOutputHtmlBytes": { "$ref": "#/$defs/nonNegativeInteger" }
       }
     },
     "themeTokens": { "$ref": "#/$defs/themeTokens" }

@@ -1,4 +1,9 @@
-use std::{fs, io, path::PathBuf, process::Command};
+use std::{
+    fs,
+    io::{self, Write},
+    path::PathBuf,
+    process::{Command, Stdio},
+};
 
 #[test]
 fn renders_html_from_example() -> Result<(), Box<dyn std::error::Error>> {
@@ -166,6 +171,31 @@ fn max_input_bytes_is_enforced_before_parse() -> Result<(), Box<dyn std::error::
 }
 
 #[test]
+fn max_input_bytes_bounds_stdin_reads() -> Result<(), Box<dyn std::error::Error>> {
+    let temp = tempfile::tempdir()?;
+    let config = temp.path().join("agent-ui-render.config.json");
+    fs::write(&config, r#"{"limits":{"maxInputBytes":10}}"#)?;
+    let mut child = Command::new(env!("CARGO_BIN_EXE_agent-ui-render"))
+        .arg("--config")
+        .arg(config)
+        .args(["validate", "-"])
+        .stdin(Stdio::piped())
+        .stdout(Stdio::null())
+        .stderr(Stdio::piped())
+        .spawn()?;
+    child
+        .stdin
+        .take()
+        .ok_or("stdin should be piped")?
+        .write_all(br#"{"version":1,"t":"payload larger than ten bytes"}"#)?;
+    let output = child.wait_with_output()?;
+
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("maxInputBytes 10"));
+    Ok(())
+}
+
+#[test]
 fn schema_print_outputs_valid_json() -> Result<(), Box<dyn std::error::Error>> {
     for schema in [
         "compact",
@@ -209,6 +239,28 @@ fn output_html_size_warning_can_be_enforced() -> Result<(), Box<dyn std::error::
         .arg(output)
         .status()?;
     assert_eq!(status.code(), Some(3));
+    Ok(())
+}
+
+#[test]
+fn hard_output_html_limit_preserves_existing_file() -> Result<(), Box<dyn std::error::Error>> {
+    let temp = tempfile::tempdir()?;
+    let config = temp.path().join("agent-ui-render.config.json");
+    fs::write(&config, r#"{"limits":{"maxOutputHtmlBytes":1}}"#)?;
+    let output_path = temp.path().join("report.static.html");
+    fs::write(&output_path, "existing")?;
+    let input = workspace_root()?.join("examples/revenue-overview.input.json");
+    let output = Command::new(env!("CARGO_BIN_EXE_agent-ui-render"))
+        .arg("--config")
+        .arg(config)
+        .args(["render", "static-html"])
+        .arg(input)
+        .arg(&output_path)
+        .output()?;
+
+    assert_eq!(output.status.code(), Some(1));
+    assert!(String::from_utf8_lossy(&output.stderr).contains("maxOutputHtmlBytes 1"));
+    assert_eq!(fs::read_to_string(output_path)?, "existing");
     Ok(())
 }
 
