@@ -1,10 +1,16 @@
 import { promises as fs } from "node:fs";
 
 const port = Number(process.argv[2]);
-const captureScreenshots = process.argv[3] === "capture";
-if (!Number.isInteger(port) || port <= 0) {
+const startupBudgetMs = Number(process.argv[3]);
+const captureScreenshots = process.argv[4] === "capture";
+if (
+	!Number.isInteger(port) ||
+	port <= 0 ||
+	!Number.isInteger(startupBudgetMs) ||
+	startupBudgetMs <= 0
+) {
 	throw new Error(
-		"Usage: bun scripts/interaction-smoke.ts <remote-debugging-port> [capture]",
+		"Usage: bun scripts/interaction-smoke.ts <remote-debugging-port> <startup-budget-ms> [capture]",
 	);
 }
 
@@ -129,7 +135,39 @@ if (captureScreenshots) {
 await send("Page.enable");
 await send("Network.enable");
 await send("Log.enable");
-await wait(12_000);
+
+let readiness: {
+	cards: number;
+	svgs: number;
+	markTabStops: number;
+	errors: number;
+	elapsedMs: number;
+};
+do {
+	readiness = await evaluate(`(() => ({
+		cards: document.querySelectorAll('[data-view-intent="chart"]').length,
+		svgs: document.querySelectorAll('.vega-chart svg').length,
+		markTabStops: document.querySelectorAll('.vega-chart g.role-mark > [role="graphics-symbol"][tabindex="0"]').length,
+		errors: document.querySelectorAll('.chart-render-error').length,
+		elapsedMs: performance.now()
+	}))()`);
+	if (
+		readiness.cards === 44 &&
+		readiness.svgs === 44 &&
+		readiness.markTabStops === 44
+	) {
+		break;
+	}
+	await wait(100);
+} while (readiness.elapsedMs <= startupBudgetMs);
+assert(
+	readiness.cards === 44 &&
+		readiness.svgs === 44 &&
+		readiness.markTabStops === 44 &&
+		readiness.elapsedMs <= startupBudgetMs,
+	`browser startup exceeded ${startupBudgetMs} ms: ${Math.round(readiness.elapsedMs)} ms, ${readiness.cards} cards, ${readiness.svgs} SVGs, ${readiness.markTabStops} interactive charts, ${readiness.errors} errors`,
+);
+const browserStartupMs = Math.round(readiness.elapsedMs);
 
 const initial = await evaluate<{
 	cards: number;
@@ -559,6 +597,6 @@ assert(
 	`rich HTML violated its CSP: ${contentSecurityPolicyErrors.join(" | ")}`,
 );
 process.stdout.write(
-	"interaction smoke OK: CSP, accessibility, no-network, tooltip, keyboard, click, reset, legend, brush, zoom\n",
+	`interaction smoke OK: startup ${browserStartupMs}/${startupBudgetMs} ms, CSP, accessibility, no-network, tooltip, keyboard, click, reset, legend, brush, zoom\n`,
 );
 socket.close();

@@ -74,6 +74,11 @@ Rust embeds these files through `include_str!`, so they must exist before
 - Keep the generated HTML CSP hash-only for inline scripts/styles. Vega currently
   requires `'unsafe-eval'` for trusted planner-generated expressions; do not add
   `'unsafe-inline'` or external connection sources.
+- Keep `generated/renderer.js` within the raw and gzip budgets enforced by
+  `make performance-check`; justify budget increases with a measured delta.
+  Chart-runtime lazy loading is intentionally deferred while the renderer stays
+  below budget and preserves a single-file offline HTML contract. Revisit it
+  before raising either budget, including CSP and handoff-asset implications.
 - Keep focused unit and component coverage under `renderer-vue/tests`; browser-only
   interactions and serious/critical axe accessibility checks remain in
   `scripts/interaction-smoke.ts`.

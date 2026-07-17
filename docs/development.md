@@ -17,6 +17,7 @@ Stable task entry points:
 ```text
 make setup          install renderer dependencies
 make generate       build generated/renderer.js and generated/renderer.css
+make performance-check enforce renderer bundle size budgets
 make dev            build assets and run CLI help from source
 make typecheck      run Vue and Rust type checks
 make msrv           check all Rust targets with Rust 1.91
@@ -42,7 +43,14 @@ INTERACTION_SCREENSHOT_DIR=target/visual-smoke/interactions make interaction-smo
 The interaction smoke uses `scripts/fixtures/interaction.config.json` by default
 so theme-token CSP hashes are exercised. Set `INTERACTION_CONFIG=` to test without
 a config, or point it at another trusted config. The smoke fails on serious or
-critical axe accessibility violations and on browser CSP errors.
+critical axe accessibility violations and on browser CSP errors. It also measures
+navigation-to-44-chart readiness against an 8,000 ms default budget; override it
+for controlled calibration with `INTERACTION_STARTUP_BUDGET_MS`.
+
+`make performance-check` limits `generated/renderer.js` to 925,000 raw bytes and
+320,000 gzip bytes. Controlled experiments may override
+`RENDERER_JS_RAW_BUDGET_BYTES` or `RENDERER_JS_GZIP_BUDGET_BYTES`; budget increases
+should be reviewed with the corresponding measured bundle delta.
 
 ## Documentation diagram style
 

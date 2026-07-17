@@ -51,6 +51,8 @@ jobs:
           bun audit
       - name: Ensure generated renderer assets are committed
         run: git diff --exit-code generated/ renderer-vue/src/
+      - name: Enforce renderer performance budgets
+        run: bun scripts/check-performance-budgets.ts
       - name: Install cargo-audit
         run: cargo install cargo-audit --version 0.22.2 --locked
       - run: cargo audit

@@ -80,7 +80,8 @@ The release binary should include `generated/renderer.js` and
 `generated/renderer.css` through `include_str!`; no runtime `node_modules` are
 needed. `scripts/verify-release.sh` builds the release binary, validates bundled
 schemas as JSON, validates all examples, normalizes/plans an example, and renders
-HTML/static HTML smoke artifacts.
+HTML/static HTML smoke artifacts. `make check` also enforces raw/gzip renderer
+budgets and a measured browser chart-readiness threshold.
 
 ## Tag release
 

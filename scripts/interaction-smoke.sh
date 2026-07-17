@@ -32,6 +32,11 @@ mkdir -p target/visual-smoke
 INPUT="${INTERACTION_INPUT:-examples/v2-chart-showcase.input.json}"
 HTML="${INTERACTION_HTML:-target/visual-smoke/v2-chart-showcase.html}"
 CONFIG="${INTERACTION_CONFIG-scripts/fixtures/interaction.config.json}"
+STARTUP_BUDGET_MS="${INTERACTION_STARTUP_BUDGET_MS:-8000}"
+if [[ ! "$STARTUP_BUDGET_MS" =~ ^[1-9][0-9]*$ ]]; then
+	echo "INTERACTION_STARTUP_BUDGET_MS must be a positive integer" >&2
+	exit 2
+fi
 CONFIG_ARGS=()
 if [[ -n "$CONFIG" ]]; then
 	CONFIG_ARGS+=(--config "$CONFIG")
@@ -81,7 +86,7 @@ fi
 
 for _ in $(seq 1 100); do
 	if curl --silent --fail "http://127.0.0.1:$PORT/json" >/dev/null; then
-		bun scripts/interaction-smoke.ts "$PORT" "${SCREENSHOT_ARGS[@]}"
+		bun scripts/interaction-smoke.ts "$PORT" "$STARTUP_BUDGET_MS" "${SCREENSHOT_ARGS[@]}"
 		exit 0
 	fi
 	sleep 0.2
