@@ -4,12 +4,19 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-command -v actionlint >/dev/null 2>&1 || {
-	echo "actionlint not found. Install pinned tools with: mise install" >&2
-	exit 127
-}
+ACTIONLINT_BIN="${ACTIONLINT_BIN:-}"
+if [[ -z "$ACTIONLINT_BIN" ]]; then
+	if command -v actionlint >/dev/null 2>&1; then
+		ACTIONLINT_BIN="$(command -v actionlint)"
+	elif command -v go >/dev/null 2>&1 && [[ -x "$(go env GOPATH)/bin/actionlint" ]]; then
+		ACTIONLINT_BIN="$(go env GOPATH)/bin/actionlint"
+	else
+		echo "actionlint not found. Install pinned tools with: mise install" >&2
+		exit 127
+	fi
+fi
 
-actionlint .github/workflows/*.yml
+"$ACTIONLINT_BIN" .github/workflows/*.yml
 
 unpinned="$({
 	grep -HnE '^[[:space:]]*(- )?uses:' .github/workflows/*.yml || true
